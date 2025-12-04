@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { StudentLayout } from "@/components/layout/StudentLayout";
+// Auth
+import Login from "./pages/Login";
 // Admin pages
 import Dashboard from "./pages/Dashboard";
 import Maestros from "./pages/Maestros";
@@ -35,9 +37,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Login */}
+          <Route path="/" element={<Login />} />
+
           {/* Admin Routes */}
           <Route
-            path="/"
+            path="/admin"
             element={
               <AdminLayout>
                 <Dashboard />

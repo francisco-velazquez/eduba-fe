@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   Users,
@@ -11,15 +13,23 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Maestros", url: "/maestros", icon: UserCog },
-  { title: "Alumnos", url: "/alumnos", icon: Users },
-  { title: "Grados", url: "/grados", icon: GraduationCap },
-  { title: "Asignaturas", url: "/asignaturas", icon: BookOpen },
-  { title: "Asignaciones", url: "/asignaciones", icon: Settings },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Maestros", url: "/admin/maestros", icon: UserCog },
+  { title: "Alumnos", url: "/admin/alumnos", icon: Users },
+  { title: "Grados", url: "/admin/grados", icon: GraduationCap },
+  { title: "Asignaturas", url: "/admin/asignaturas", icon: BookOpen },
+  { title: "Asignaciones", url: "/admin/asignaciones", icon: Settings },
 ];
 
 export function AdminSidebar() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
       <div className="flex h-full flex-col">
@@ -40,7 +50,7 @@ export function AdminSidebar() {
             <NavLink
               key={item.url}
               to={item.url}
-              end={item.url === "/"}
+              end={item.url === "/admin"}
               className="sidebar-link"
               activeClassName="sidebar-link-active"
             >
@@ -52,7 +62,10 @@ export function AdminSidebar() {
 
         {/* Footer */}
         <div className="border-t border-sidebar-border p-4">
-          <button className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10">
+          <button 
+            onClick={handleSignOut}
+            className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+          >
             <LogOut className="h-5 w-5" />
             <span>Cerrar Sesión</span>
           </button>

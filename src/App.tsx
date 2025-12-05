@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { TeacherLayout } from "@/components/layout/TeacherLayout";
 import { StudentLayout } from "@/components/layout/StudentLayout";
@@ -36,134 +37,136 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Login */}
-          <Route path="/" element={<Login />} />
+        <AuthProvider>
+          <Routes>
+            {/* Login */}
+            <Route path="/" element={<Login />} />
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <AdminLayout>
-                <Dashboard />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/maestros"
-            element={
-              <AdminLayout>
-                <Maestros />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/alumnos"
-            element={
-              <AdminLayout>
-                <Alumnos />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/grados"
-            element={
-              <AdminLayout>
-                <Grados />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/asignaturas"
-            element={
-              <AdminLayout>
-                <Asignaturas />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/asignaciones"
-            element={
-              <AdminLayout>
-                <Asignaciones />
-              </AdminLayout>
-            }
-          />
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <AdminLayout>
+                  <Dashboard />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/maestros"
+              element={
+                <AdminLayout>
+                  <Maestros />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/alumnos"
+              element={
+                <AdminLayout>
+                  <Alumnos />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/grados"
+              element={
+                <AdminLayout>
+                  <Grados />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/asignaturas"
+              element={
+                <AdminLayout>
+                  <Asignaturas />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="/admin/asignaciones"
+              element={
+                <AdminLayout>
+                  <Asignaciones />
+                </AdminLayout>
+              }
+            />
 
-          {/* Teacher Routes */}
-          <Route
-            path="/maestro"
-            element={
-              <TeacherLayout>
-                <TeacherDashboard />
-              </TeacherLayout>
-            }
-          />
-          <Route
-            path="/maestro/asignaturas"
-            element={
-              <TeacherLayout>
-                <TeacherSubjects />
-              </TeacherLayout>
-            }
-          />
-          <Route
-            path="/maestro/contenido"
-            element={
-              <TeacherLayout>
-                <TeacherContent />
-              </TeacherLayout>
-            }
-          />
-          <Route
-            path="/maestro/examenes"
-            element={
-              <TeacherLayout>
-                <TeacherExams />
-              </TeacherLayout>
-            }
-          />
+            {/* Teacher Routes */}
+            <Route
+              path="/maestro"
+              element={
+                <TeacherLayout>
+                  <TeacherDashboard />
+                </TeacherLayout>
+              }
+            />
+            <Route
+              path="/maestro/asignaturas"
+              element={
+                <TeacherLayout>
+                  <TeacherSubjects />
+                </TeacherLayout>
+              }
+            />
+            <Route
+              path="/maestro/contenido"
+              element={
+                <TeacherLayout>
+                  <TeacherContent />
+                </TeacherLayout>
+              }
+            />
+            <Route
+              path="/maestro/examenes"
+              element={
+                <TeacherLayout>
+                  <TeacherExams />
+                </TeacherLayout>
+              }
+            />
 
-          {/* Student Routes */}
-          <Route
-            path="/alumno"
-            element={
-              <StudentLayout>
-                <StudentDashboard />
-              </StudentLayout>
-            }
-          />
-          <Route
-            path="/alumno/cursos"
-            element={
-              <StudentLayout>
-                <StudentCourses />
-              </StudentLayout>
-            }
-          />
-          <Route
-            path="/alumno/curso/:id"
-            element={<StudentCourseViewer />}
-          />
-          <Route
-            path="/alumno/examenes"
-            element={
-              <StudentLayout>
-                <StudentExams />
-              </StudentLayout>
-            }
-          />
-          <Route
-            path="/alumno/calificaciones"
-            element={
-              <StudentLayout>
-                <StudentGrades />
-              </StudentLayout>
-            }
-          />
+            {/* Student Routes */}
+            <Route
+              path="/alumno"
+              element={
+                <StudentLayout>
+                  <StudentDashboard />
+                </StudentLayout>
+              }
+            />
+            <Route
+              path="/alumno/cursos"
+              element={
+                <StudentLayout>
+                  <StudentCourses />
+                </StudentLayout>
+              }
+            />
+            <Route
+              path="/alumno/curso/:id"
+              element={<StudentCourseViewer />}
+            />
+            <Route
+              path="/alumno/examenes"
+              element={
+                <StudentLayout>
+                  <StudentExams />
+                </StudentLayout>
+              }
+            />
+            <Route
+              path="/alumno/calificaciones"
+              element={
+                <StudentLayout>
+                  <StudentGrades />
+                </StudentLayout>
+              }
+            />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

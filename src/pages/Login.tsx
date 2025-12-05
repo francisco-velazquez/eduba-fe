@@ -1,44 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, BookOpen, Users, ArrowRight, Mail, Lock } from "lucide-react";
+import { GraduationCap, ArrowRight, Mail, Lock, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-type UserRole = "maestro" | "alumno" | null;
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
+  const { toast } = useToast();
+  const { user, role, loading: authLoading, signIn, signUp } = useAuth();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedRole === "maestro") {
-      navigate("/maestro");
-    } else if (selectedRole === "alumno") {
-      navigate("/alumno");
+  // Redirect based on role when authenticated
+  useEffect(() => {
+    if (user && role) {
+      switch (role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "maestro":
+          navigate("/maestro");
+          break;
+        case "alumno":
+          navigate("/alumno");
+          break;
+      }
     }
+  }, [user, role, navigate]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error al iniciar sesión",
+        description: error.message === "Invalid login credentials" 
+          ? "Credenciales inválidas. Verifica tu correo y contraseña."
+          : error.message
+      });
+    }
+    
+    setLoading(false);
   };
 
-  const roles = [
-    {
-      id: "maestro" as const,
-      title: "Soy Maestro",
-      description: "Accede a tus asignaturas, gestiona contenido y crea exámenes",
-      icon: BookOpen,
-      color: "emerald",
-    },
-    {
-      id: "alumno" as const,
-      title: "Soy Alumno",
-      description: "Visualiza tus cursos, estudia el material y presenta exámenes",
-      icon: Users,
-      color: "violet",
-    },
-  ];
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const { error } = await signUp(email, password, fullName);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error al registrarse",
+        description: error.message.includes("already registered")
+          ? "Este correo ya está registrado. Intenta iniciar sesión."
+          : error.message
+      });
+    } else {
+      toast({
+        title: "Cuenta creada",
+        description: "Tu cuenta ha sido creada exitosamente."
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -54,135 +101,135 @@ export default function Login() {
 
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
+            <CardTitle className="text-xl">Bienvenido</CardTitle>
             <CardDescription>
-              Selecciona tu rol y accede a tu panel
+              Inicia sesión o crea una cuenta para continuar
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Role Selection */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  type="button"
-                  onClick={() => setSelectedRole(role.id)}
-                  className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                    selectedRole === role.id
-                      ? role.color === "emerald"
-                        ? "border-emerald-500 bg-emerald-500/10"
-                        : "border-violet-500 bg-violet-500/10"
-                      : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
-                  }`}
-                >
-                  <div
-                    className={`h-10 w-10 rounded-lg flex items-center justify-center mb-3 ${
-                      role.color === "emerald"
-                        ? "bg-emerald-500/20 text-emerald-500"
-                        : "bg-violet-500/20 text-violet-500"
-                    }`}
-                  >
-                    <role.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-semibold text-foreground text-sm">{role.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {role.description}
-                  </p>
-                  {selectedRole === role.id && (
-                    <div
-                      className={`absolute top-2 right-2 h-5 w-5 rounded-full flex items-center justify-center ${
-                        role.color === "emerald" ? "bg-emerald-500" : "bg-violet-500"
-                      }`}
-                    >
-                      <svg
-                        className="h-3 w-3 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                <TabsTrigger value="register">Registrarse</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Correo electrónico</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="tu@correo.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
                     </div>
-                  )}
-                </button>
-              ))}
-            </div>
+                  </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@correo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        Ingresar
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="rounded border-border"
-                  />
-                  <span className="text-muted-foreground">Recordarme</span>
-                </label>
-                <button
-                  type="button"
-                  className="text-primary hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              <TabsContent value="register">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="register-name">Nombre completo</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-name"
+                        type="text"
+                        placeholder="Juan Pérez"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!selectedRole}
-              >
-                Ingresar
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </form>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Correo electrónico</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-email"
+                        type="email"
+                        placeholder="tu@correo.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
 
-            {/* Admin Link */}
-            <div className="mt-6 pt-6 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground">
-                ¿Eres administrador?{" "}
-                <button
-                  onClick={() => navigate("/admin")}
-                  className="text-primary hover:underline font-medium"
-                >
-                  Accede al panel de administración
-                </button>
-              </p>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-password"
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        Crear cuenta
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    Las cuentas nuevas se registran como alumno por defecto.
+                    Un administrador puede cambiar tu rol.
+                  </p>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   BookOpen,
@@ -16,6 +18,17 @@ const navItems = [
 ];
 
 export function TeacherSidebar() {
+  const navigate = useNavigate();
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  // Get initials from email
+  const initials = user?.email?.slice(0, 2).toUpperCase() || "MT";
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
       <div className="flex h-full flex-col">
@@ -50,14 +63,19 @@ export function TeacherSidebar() {
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center gap-3 mb-4 px-3">
             <div className="h-9 w-9 rounded-full bg-emerald-500 flex items-center justify-center">
-              <span className="text-sm font-medium text-white">JG</span>
+              <span className="text-sm font-medium text-white">{initials}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Juan García</p>
-              <p className="text-xs text-sidebar-foreground/60">Matemáticas</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.email || "Maestro"}
+              </p>
+              <p className="text-xs text-sidebar-foreground/60">Maestro</p>
             </div>
           </div>
-          <button className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10">
+          <button 
+            onClick={handleSignOut}
+            className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+          >
             <LogOut className="h-5 w-5" />
             <span>Cerrar Sesión</span>
           </button>

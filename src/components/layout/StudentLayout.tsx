@@ -1,28 +1,59 @@
+import { useState } from "react";
 import { StudentSidebar } from "./StudentSidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface StudentLayoutProps {
   children: React.ReactNode;
 }
 
 export function StudentLayout({ children }: StudentLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <StudentSidebar />
-      
-      <div className="pl-64">
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-8">
-          <div className="relative w-96">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <StudentSidebar />
+      </div>
+
+      <div className="md:pl-64">
+        {/* Header */}
+        <header className="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-8">
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+                <StudentSidebar onNavigate={() => setSidebarOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Search - Hidden on mobile */}
+          <div className="hidden sm:block relative w-full max-w-sm md:max-w-md lg:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar cursos, materiales..."
-              className="pl-10 bg-background border-border"
+              className="pl-10 bg-background border-border text-sm"
             />
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          {/* Mobile Title */}
+          <h1 className="sm:hidden text-base font-semibold text-foreground">Mis Cursos</h1>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile Search Icon */}
+            <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </Button>
+
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-violet-500" />
@@ -31,9 +62,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         </header>
 
         {/* Main Content */}
-        <main className="p-8">
-          {children}
-        </main>
+        <main className="p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

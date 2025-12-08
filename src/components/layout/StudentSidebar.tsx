@@ -17,20 +17,27 @@ const navItems = [
   { title: "Calificaciones", url: "/alumno/calificaciones", icon: Trophy },
 ];
 
-export function StudentSidebar() {
+interface StudentSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function StudentSidebar({ onNavigate }: StudentSidebarProps) {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() || "AL";
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
-  // Get initials from email
-  const initials = user?.email?.slice(0, 2).toUpperCase() || "AL";
+  const handleNavClick = () => {
+    onNavigate?.();
+  };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
+    <aside className="md:fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border">
@@ -44,7 +51,7 @@ export function StudentSidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.url}
@@ -52,6 +59,7 @@ export function StudentSidebar() {
               end={item.url === "/alumno"}
               className="sidebar-link"
               activeClassName="sidebar-link-active"
+              onClick={handleNavClick}
             >
               <item.icon className="h-5 w-5" />
               <span>{item.title}</span>
@@ -72,7 +80,7 @@ export function StudentSidebar() {
               <p className="text-xs text-sidebar-foreground/60">Alumno</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleSignOut}
             className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
           >

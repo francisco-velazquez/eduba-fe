@@ -1,38 +1,69 @@
+import { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      
-      <div className="pl-64">
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-8">
-          <div className="relative w-96">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <AdminSidebar />
+      </div>
+
+      <div className="md:pl-64">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-8">
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+                <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Search - Hidden on mobile, visible on tablet+ */}
+          <div className="hidden sm:block relative w-full max-w-sm md:max-w-md lg:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar usuarios, grados, asignaturas..."
-              className="pl-10 bg-background border-border"
+              className="pl-10 bg-background border-border text-sm"
             />
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          {/* Mobile Title */}
+          <h1 className="sm:hidden text-base font-semibold text-foreground">EduManager</h1>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile Search Icon */}
+            <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </Button>
+
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
             </button>
-            
-            <div className="flex items-center gap-3">
+
+            <div className="hidden md:flex items-center gap-3">
               <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center">
                 <span className="text-sm font-medium text-primary-foreground">AD</span>
               </div>
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <p className="text-sm font-medium text-foreground">Administrador</p>
                 <p className="text-xs text-muted-foreground">admin@edumanager.com</p>
               </div>
@@ -41,9 +72,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Main Content */}
-        <main className="p-8">
-          {children}
-        </main>
+        <main className="p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

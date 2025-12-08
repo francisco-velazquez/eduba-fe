@@ -27,19 +27,23 @@ export default function Grados() {
   const primaria = gradosData.filter((g) => g.nivel === "Primaria");
   const secundaria = gradosData.filter((g) => g.nivel === "Secundaria");
 
-  const GradoCard = ({ grado, index }: { grado: typeof gradosData[0]; index: number }) => (
+  const GradoCard = ({ grado, index }: { grado: (typeof gradosData)[0]; index: number }) => (
     <div
-      className="stat-card group animate-fade-in"
+      className="stat-card group animate-fade-in p-4 md:p-6"
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-semibold text-foreground text-lg">{grado.nombre}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{grado.nivel}</p>
+          <h3 className="font-semibold text-foreground text-base md:text-lg">{grado.nombre}</h3>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">{grado.nivel}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -55,23 +59,23 @@ export default function Grados() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      
-      <div className="mt-6 flex items-center gap-6">
+
+      <div className="mt-4 md:mt-6 flex items-center gap-4 md:gap-6">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Users className="h-4 w-4 text-primary" />
+          <div className="p-1.5 md:p-2 rounded-lg bg-primary/10">
+            <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
           </div>
           <div>
-            <p className="text-xl font-semibold text-foreground">{grado.alumnos}</p>
+            <p className="text-lg md:text-xl font-semibold text-foreground">{grado.alumnos}</p>
             <p className="text-xs text-muted-foreground">Alumnos</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-accent/10">
-            <BookOpen className="h-4 w-4 text-accent" />
+          <div className="p-1.5 md:p-2 rounded-lg bg-accent/10">
+            <BookOpen className="h-3.5 w-3.5 md:h-4 md:w-4 text-accent" />
           </div>
           <div>
-            <p className="text-xl font-semibold text-foreground">{grado.asignaturas}</p>
+            <p className="text-lg md:text-xl font-semibold text-foreground">{grado.asignaturas}</p>
             <p className="text-xs text-muted-foreground">Asignaturas</p>
           </div>
         </div>
@@ -80,14 +84,21 @@ export default function Grados() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="page-header">Grados Académicos</h1>
-          <p className="page-description">Administra los grados y niveles educativos</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
+            Grados Académicos
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Administra los grados y niveles educativos
+          </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gradient-primary border-0">
+        <Button
+          onClick={() => setDialogOpen(true)}
+          className="gradient-primary border-0 w-full sm:w-auto"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Agregar Grado
         </Button>
@@ -95,8 +106,10 @@ export default function Grados() {
 
       {/* Primaria Section */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Nivel Primaria</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">
+          Nivel Primaria
+        </h2>
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {primaria.map((grado, index) => (
             <GradoCard key={grado.id} grado={grado} index={index} />
           ))}
@@ -105,8 +118,10 @@ export default function Grados() {
 
       {/* Secundaria Section */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Nivel Secundaria</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">
+          Nivel Secundaria
+        </h2>
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {secundaria.map((grado, index) => (
             <GradoCard key={grado.id} grado={grado} index={index + primaria.length} />
           ))}

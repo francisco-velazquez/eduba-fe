@@ -22,17 +22,19 @@ const recentGrades = [
 
 export default function StudentDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="page-header">¡Hola, María!</h1>
-        <p className="page-description">
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
+          ¡Hola, María!
+        </h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           Continúa aprendiendo, vas muy bien en tu progreso
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Cursos Activos"
           value={6}
@@ -65,27 +67,33 @@ export default function StudentDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         {/* My Courses */}
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-card p-6">
-          <h3 className="font-semibold text-foreground mb-4">Mis Cursos</h3>
-          <div className="space-y-4">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-card p-4 md:p-6">
+          <h3 className="font-semibold text-foreground mb-4 text-sm md:text-base">Mis Cursos</h3>
+          <div className="space-y-3 md:space-y-4">
             {myCourses.map((course, index) => (
               <div
                 key={index}
-                className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
               >
-                <div className="h-12 w-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-violet-600" />
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-violet-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium text-foreground">{course.name}</h4>
-                    <span className="text-sm font-medium text-foreground">{course.progress}%</span>
+                    <h4 className="font-medium text-foreground text-sm md:text-base truncate">
+                      {course.name}
+                    </h4>
+                    <span className="text-xs md:text-sm font-medium text-foreground ml-2">
+                      {course.progress}%
+                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{course.teacher}</p>
-                  <Progress value={course.progress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs md:text-sm text-muted-foreground mb-2 truncate">
+                    {course.teacher}
+                  </p>
+                  <Progress value={course.progress} className="h-1.5 md:h-2" />
+                  <p className="text-xs text-muted-foreground mt-2 truncate hidden sm:block">
                     Siguiente: {course.nextLesson}
                   </p>
                 </div>
@@ -95,10 +103,12 @@ export default function StudentDashboard() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Upcoming Exams */}
-          <div className="bg-card rounded-xl border border-border shadow-card p-6">
-            <h3 className="font-semibold text-foreground mb-4">Próximos Exámenes</h3>
+          <div className="bg-card rounded-xl border border-border shadow-card p-4 md:p-6">
+            <h3 className="font-semibold text-foreground mb-3 md:mb-4 text-sm md:text-base">
+              Próximos Exámenes
+            </h3>
             <div className="space-y-3">
               {upcomingExams.map((exam, index) => (
                 <div
@@ -117,23 +127,33 @@ export default function StudentDashboard() {
           </div>
 
           {/* Recent Grades */}
-          <div className="bg-card rounded-xl border border-border shadow-card p-6">
-            <h3 className="font-semibold text-foreground mb-4">Calificaciones Recientes</h3>
+          <div className="bg-card rounded-xl border border-border shadow-card p-4 md:p-6">
+            <h3 className="font-semibold text-foreground mb-3 md:mb-4 text-sm md:text-base">
+              Calificaciones Recientes
+            </h3>
             <div className="space-y-3">
               {recentGrades.map((grade, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{grade.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{grade.name}</p>
                     <p className="text-xs text-muted-foreground">{grade.subject}</p>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${grade.grade >= 9 ? 'text-emerald-600' : grade.grade >= 7 ? 'text-amber-600' : 'text-red-600'}`}>
+                  <div className="text-right ml-2">
+                    <p
+                      className={`text-base md:text-lg font-bold ${
+                        grade.grade >= 9
+                          ? "text-emerald-600"
+                          : grade.grade >= 7
+                            ? "text-amber-600"
+                            : "text-red-600"
+                      }`}
+                    >
                       {grade.grade}
                     </p>
-                    <p className="text-xs text-muted-foreground">{grade.date}</p>
+                    <p className="text-xs text-muted-foreground hidden sm:block">{grade.date}</p>
                   </div>
                 </div>
               ))}

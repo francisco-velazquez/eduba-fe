@@ -14,17 +14,19 @@ const recentExams = [
 
 export default function TeacherDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="page-header">Bienvenido, Profesor García</h1>
-        <p className="page-description">
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
+          Bienvenido, Profesor García
+        </h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           Aquí tienes un resumen de tu actividad docente
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Asignaturas"
           value={3}
@@ -57,28 +59,38 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
         {/* My Subjects */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h3 className="font-semibold text-foreground mb-4">Mis Asignaturas</h3>
+        <div className="bg-card rounded-xl border border-border shadow-card p-4 md:p-6">
+          <h3 className="font-semibold text-foreground mb-3 md:mb-4 text-sm md:text-base">
+            Mis Asignaturas
+          </h3>
           <div className="space-y-3">
             {mySubjects.map((subject, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-emerald-600" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="h-4 w-4 md:h-5 md:w-5 text-emerald-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{subject.name}</p>
-                    <p className="text-sm text-muted-foreground">{subject.grade}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground text-sm md:text-base truncate">
+                      {subject.name}
+                    </p>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">
+                      {subject.grade}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">{subject.students} alumnos</p>
-                  <p className="text-xs text-muted-foreground">{subject.modules} módulos</p>
+                <div className="text-right ml-2 flex-shrink-0">
+                  <p className="text-xs md:text-sm font-medium text-foreground">
+                    {subject.students} alumnos
+                  </p>
+                  <p className="text-xs text-muted-foreground hidden sm:block">
+                    {subject.modules} módulos
+                  </p>
                 </div>
               </div>
             ))}
@@ -86,29 +98,31 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Recent Exams */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h3 className="font-semibold text-foreground mb-4">Exámenes Recientes</h3>
+        <div className="bg-card rounded-xl border border-border shadow-card p-4 md:p-6">
+          <h3 className="font-semibold text-foreground mb-3 md:mb-4 text-sm md:text-base">
+            Exámenes Recientes
+          </h3>
           <div className="space-y-3">
             {recentExams.map((exam, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
+                className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg"
               >
-                <div>
-                  <p className="font-medium text-foreground">{exam.name}</p>
-                  <p className="text-sm text-muted-foreground">{exam.subject}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-foreground text-sm truncate">{exam.name}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{exam.subject}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right ml-2 flex-shrink-0">
                   {exam.pending > 0 ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600">
                       {exam.pending} por revisar
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600">
                       Completado
                     </span>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{exam.date}</p>
+                  <p className="text-xs text-muted-foreground mt-1 hidden sm:block">{exam.date}</p>
                 </div>
               </div>
             ))}
@@ -117,7 +131,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         {[
           { title: "Crear Módulo", description: "Agregar nuevo contenido", href: "/maestro/contenido" },
           { title: "Subir Material", description: "Videos, PDFs, presentaciones", href: "/maestro/contenido" },
@@ -127,13 +141,15 @@ export default function TeacherDashboard() {
           <a
             key={action.title}
             href={action.href}
-            className="group stat-card cursor-pointer hover:border-emerald-500/50 animate-fade-in"
+            className="group stat-card cursor-pointer hover:border-emerald-500/50 animate-fade-in p-4 md:p-6"
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <h4 className="font-medium text-foreground group-hover:text-emerald-600 transition-colors">
+            <h4 className="font-medium text-foreground group-hover:text-emerald-600 transition-colors text-sm md:text-base">
               {action.title}
             </h4>
-            <p className="text-sm text-muted-foreground mt-1">{action.description}</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">
+              {action.description}
+            </p>
           </a>
         ))}
       </div>

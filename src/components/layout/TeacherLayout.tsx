@@ -4,6 +4,8 @@ import { Bell, Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks";
+import { APP_CONFIG, ROLE_LABELS } from "@/config";
 
 interface TeacherLayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,9 @@ interface TeacherLayoutProps {
 
 export function TeacherLayout({ children }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useAuth();
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() || "MA";
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,28 +41,37 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
             </Sheet>
           </div>
 
-          {/* Search - Hidden on mobile */}
+          {/* Search */}
           <div className="hidden sm:block relative w-full max-w-sm md:max-w-md lg:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar contenido, exámenes..."
+              placeholder="Buscar asignaturas, contenido..."
               className="pl-10 bg-background border-border text-sm"
             />
           </div>
 
           {/* Mobile Title */}
-          <h1 className="sm:hidden text-base font-semibold text-foreground">Panel Maestro</h1>
+          <h1 className="sm:hidden text-base font-semibold text-foreground">{APP_CONFIG.name}</h1>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Mobile Search Icon */}
             <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
               <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
 
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
             </button>
+
+            <div className="hidden md:flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center">
+                <span className="text-sm font-medium text-primary-foreground">{initials}</span>
+              </div>
+              <div className="hidden lg:block">
+                <p className="text-sm font-medium text-foreground">{ROLE_LABELS.maestro}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
           </div>
         </header>
 

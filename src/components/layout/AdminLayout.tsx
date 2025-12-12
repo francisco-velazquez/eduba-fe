@@ -4,6 +4,8 @@ import { Bell, Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks";
+import { APP_CONFIG, ROLE_LABELS } from "@/config";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,9 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useAuth();
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() || "AD";
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +51,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           {/* Mobile Title */}
-          <h1 className="sm:hidden text-base font-semibold text-foreground">EduManager</h1>
+          <h1 className="sm:hidden text-base font-semibold text-foreground">{APP_CONFIG.name}</h1>
 
           <div className="flex items-center gap-2 md:gap-4">
             {/* Mobile Search Icon */}
@@ -61,11 +66,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
             <div className="hidden md:flex items-center gap-3">
               <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center">
-                <span className="text-sm font-medium text-primary-foreground">AD</span>
+                <span className="text-sm font-medium text-primary-foreground">{initials}</span>
               </div>
               <div className="hidden lg:block">
-                <p className="text-sm font-medium text-foreground">Administrador</p>
-                <p className="text-xs text-muted-foreground">admin@edumanager.com</p>
+                <p className="text-sm font-medium text-foreground">{ROLE_LABELS.admin}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
           </div>

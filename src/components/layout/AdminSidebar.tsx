@@ -1,25 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { useAuth } from "@/hooks/useAuth";
-import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  BookOpen,
-  Settings,
-  LogOut,
-  School,
-  UserCog,
-} from "lucide-react";
-
-const navItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Maestros", url: "/admin/maestros", icon: UserCog },
-  { title: "Alumnos", url: "/admin/alumnos", icon: Users },
-  { title: "Grados", url: "/admin/grados", icon: GraduationCap },
-  { title: "Asignaturas", url: "/admin/asignaturas", icon: BookOpen },
-  { title: "Asignaciones", url: "/admin/asignaciones", icon: Settings },
-];
+import { useAuth } from "@/hooks";
+import { LogOut, School } from "lucide-react";
+import { ADMIN_NAV_ITEMS, APP_CONFIG, ROLE_LABELS } from "@/config";
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -49,18 +32,18 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             <School className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">EduManager</h1>
-            <p className="text-xs text-sidebar-foreground/60">Panel Admin</p>
+            <h1 className="text-lg font-semibold text-sidebar-foreground">{APP_CONFIG.name}</h1>
+            <p className="text-xs text-sidebar-foreground/60">Panel {ROLE_LABELS.admin}</p>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {ADMIN_NAV_ITEMS.map((item) => (
             <NavLink
-              key={item.url}
-              to={item.url}
-              end={item.url === "/admin"}
+              key={item.path}
+              to={item.path}
+              end={item.path === "/admin"}
               className="sidebar-link"
               activeClassName="sidebar-link-active"
               onClick={handleNavClick}
@@ -81,7 +64,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
               <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {user?.email || "Administrador"}
               </p>
-              <p className="text-xs text-sidebar-foreground/60">Admin</p>
+              <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS.admin}</p>
             </div>
           </div>
           <button

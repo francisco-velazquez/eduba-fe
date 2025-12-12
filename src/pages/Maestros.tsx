@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { MaestroDialog } from "@/components/dialogs/MaestroDialog";
+import { PageHeader } from "@/components/common";
 
 const maestrosData = [
   { id: 1, nombre: "Carlos López", email: "carlos.lopez@edu.com", telefono: "555-1234", asignaturas: ["Matemáticas", "Física"], estado: "activo" },
@@ -39,24 +40,19 @@ export default function Maestros() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-            Maestros
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona el personal docente
-          </p>
-        </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="gradient-primary border-0 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Maestro
-        </Button>
-      </div>
+      <PageHeader
+        title="Maestros"
+        description="Gestiona el personal docente"
+        actions={
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="gradient-primary border-0 w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Maestro
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="relative max-w-full sm:max-w-sm">

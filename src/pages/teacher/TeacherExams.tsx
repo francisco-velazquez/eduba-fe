@@ -26,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PageHeader } from "@/components/common";
 
 const subjects = [
   { id: "all", name: "Todas las asignaturas" },
@@ -109,19 +110,16 @@ export default function TeacherExams() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Exámenes</h1>
-          <p className="page-description">
-            Crea y gestiona evaluaciones para tus alumnos
-          </p>
-        </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Crear Examen
-        </Button>
-      </div>
+      <PageHeader
+        title="Exámenes"
+        description="Crea y gestiona evaluaciones para tus alumnos"
+        actions={
+          <Button className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Examen
+          </Button>
+        }
+      />
 
       {/* Filter */}
       <div className="bg-card rounded-xl border border-border p-4">

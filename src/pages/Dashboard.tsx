@@ -1,19 +1,15 @@
 import { Users, GraduationCap, BookOpen, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { PageHeader } from "@/components/common";
 
 export default function Dashboard() {
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-          Dashboard
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Bienvenido al panel de administración de EduManager
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Bienvenido al panel de administración de EduManager"
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

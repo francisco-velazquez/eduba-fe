@@ -1,6 +1,7 @@
 import { BookOpen, FileQuestion, Trophy, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/common";
 
 const myCourses = [
   { name: "Matemáticas", teacher: "Prof. García", progress: 65, nextLesson: "Ecuaciones cuadráticas" },
@@ -23,15 +24,10 @@ const recentGrades = [
 export default function StudentDashboard() {
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-          ¡Hola, María!
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Continúa aprendiendo, vas muy bien en tu progreso
-        </p>
-      </div>
+      <PageHeader
+        title="¡Hola, María!"
+        description="Continúa aprendiendo, vas muy bien en tu progreso"
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

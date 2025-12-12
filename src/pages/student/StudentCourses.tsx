@@ -1,6 +1,7 @@
-import { BookOpen, Play, FileText, Clock } from "lucide-react";
+import { BookOpen, Play, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/common";
 
 const courses = [
   {
@@ -73,14 +74,11 @@ const courses = [
 
 export default function StudentCourses() {
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="page-header">Mis Cursos</h1>
-        <p className="page-description">
-          3° Secundaria - Segundo Trimestre
-        </p>
-      </div>
+    <div className="space-y-6 md:space-y-8">
+      <PageHeader
+        title="Mis Cursos"
+        description="3° Secundaria - Segundo Trimestre"
+      />
 
       {/* Courses Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

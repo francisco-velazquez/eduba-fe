@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GradoDialog } from "@/components/dialogs/GradoDialog";
+import { PageHeader } from "@/components/common";
 
 const gradosData = [
   { id: 1, nombre: "1° Primaria", nivel: "Primaria", alumnos: 32, asignaturas: 8 },
@@ -85,24 +86,19 @@ export default function Grados() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-            Grados Académicos
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Administra los grados y niveles educativos
-          </p>
-        </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="gradient-primary border-0 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Grado
-        </Button>
-      </div>
+      <PageHeader
+        title="Grados Académicos"
+        description="Administra los grados y niveles educativos"
+        actions={
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="gradient-primary border-0 w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Grado
+          </Button>
+        }
+      />
 
       {/* Primaria Section */}
       <div>

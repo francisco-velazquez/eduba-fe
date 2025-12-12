@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PageHeader } from "@/components/common";
 
 const subjects = [
   { id: "1", name: "Matemáticas - 3° Secundaria" },
@@ -105,25 +106,22 @@ export default function TeacherContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Gestión de Contenido</h1>
-          <p className="page-description">
-            Organiza módulos, capítulos y recursos de tus asignaturas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Subir Recurso
-          </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Módulo
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Gestión de Contenido"
+        description="Organiza módulos, capítulos y recursos de tus asignaturas"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Subir Recurso
+            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Módulo
+            </Button>
+          </div>
+        }
+      />
 
       {/* Subject Selector */}
       <div className="bg-card rounded-xl border border-border p-4">

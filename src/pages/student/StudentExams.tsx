@@ -1,5 +1,6 @@
 import { FileQuestion, Clock, CheckCircle, AlertCircle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/common";
 
 const pendingExams = [
   {
@@ -54,14 +55,11 @@ const completedExams = [
 
 export default function StudentExams() {
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="page-header">Mis Exámenes</h1>
-        <p className="page-description">
-          Revisa tus evaluaciones pendientes y resultados
-        </p>
-      </div>
+    <div className="space-y-6 md:space-y-8">
+      <PageHeader
+        title="Mis Exámenes"
+        description="Revisa tus evaluaciones pendientes y resultados"
+      />
 
       {/* Pending Exams */}
       <div>

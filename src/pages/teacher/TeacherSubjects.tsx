@@ -1,5 +1,6 @@
-import { BookOpen, Users, FolderOpen, Plus } from "lucide-react";
+import { BookOpen, Users, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/common";
 
 const subjects = [
   {
@@ -36,16 +37,11 @@ const subjects = [
 
 export default function TeacherSubjects() {
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Mis Asignaturas</h1>
-          <p className="page-description">
-            Gestiona tus materias y contenido educativo
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6 md:space-y-8">
+      <PageHeader
+        title="Mis Asignaturas"
+        description="Gestiona tus materias y contenido educativo"
+      />
 
       {/* Subjects Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

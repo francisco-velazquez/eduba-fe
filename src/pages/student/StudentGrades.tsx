@@ -1,5 +1,5 @@
 import { Trophy, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/common";
 
 const subjects = [
   {
@@ -75,14 +75,11 @@ export default function StudentGrades() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="page-header">Mis Calificaciones</h1>
-        <p className="page-description">
-          3° Secundaria - Segundo Trimestre
-        </p>
-      </div>
+    <div className="space-y-6 md:space-y-8">
+      <PageHeader
+        title="Mis Calificaciones"
+        description="3° Secundaria - Segundo Trimestre"
+      />
 
       {/* Overall Average Card */}
       <div className="bg-gradient-to-r from-violet-500 to-violet-600 rounded-xl p-6 text-white">

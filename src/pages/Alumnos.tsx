@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlumnoDialog } from "@/components/dialogs/AlumnoDialog";
+import { PageHeader } from "@/components/common";
 
 const alumnosData = [
   { id: 1, nombre: "María García", email: "maria.garcia@estudiante.edu", grado: "3° Primaria", matricula: "2024-001", estado: "activo" },
@@ -52,24 +53,19 @@ export default function Alumnos() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-            Alumnos
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona los estudiantes registrados
-          </p>
-        </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="gradient-primary border-0 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Alumno
-        </Button>
-      </div>
+      <PageHeader
+        title="Alumnos"
+        description="Gestiona los estudiantes registrados"
+        actions={
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="gradient-primary border-0 w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Alumno
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

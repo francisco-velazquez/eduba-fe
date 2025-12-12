@@ -1,5 +1,6 @@
 import { BookOpen, Users, FileQuestion, TrendingUp } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { PageHeader } from "@/components/common";
 
 const mySubjects = [
   { name: "Matemáticas", grade: "3° Secundaria", students: 32, modules: 5 },
@@ -15,15 +16,10 @@ const recentExams = [
 export default function TeacherDashboard() {
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-          Bienvenido, Profesor García
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Aquí tienes un resumen de tu actividad docente
-        </p>
-      </div>
+      <PageHeader
+        title="Bienvenido, Profesor García"
+        description="Aquí tienes un resumen de tu actividad docente"
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

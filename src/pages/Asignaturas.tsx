@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AsignaturaDialog } from "@/components/dialogs/AsignaturaDialog";
+import { PageHeader } from "@/components/common";
 
 const asignaturasData = [
   { id: 1, nombre: "Matemáticas", descripcion: "Álgebra, geometría y aritmética", grados: ["3° Primaria", "4° Primaria", "5° Primaria"], maestro: "Carlos López", color: "bg-blue-500" },
@@ -34,24 +35,19 @@ export default function Asignaturas() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
-            Asignaturas
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona las materias del plan de estudios
-          </p>
-        </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="gradient-primary border-0 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Asignatura
-        </Button>
-      </div>
+      <PageHeader
+        title="Asignaturas"
+        description="Gestiona las materias del plan de estudios"
+        actions={
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="gradient-primary border-0 w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Asignatura
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-full sm:max-w-sm">

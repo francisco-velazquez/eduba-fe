@@ -1,55 +1,38 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowRight, Mail, Lock, User, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { GraduationCap, ArrowRight, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useAuthRedirect } from "@/hooks";
+import { LoadingSpinner } from "@/components/common";
+import { APP_CONFIG, TOAST_MESSAGES } from "@/config";
 
 export default function Login() {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, role, loading: authLoading, signIn, signUp } = useAuth();
+  const { signIn, signUp } = useAuth();
+  const { isLoading: authLoading } = useAuthRedirect({ redirectAuthenticated: true });
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Redirect based on role when authenticated
-  useEffect(() => {
-    if (user && role) {
-      switch (role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "maestro":
-          navigate("/maestro");
-          break;
-        case "alumno":
-          navigate("/alumno");
-          break;
-      }
-    }
-  }, [user, role, navigate]);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const result = await signIn({ email, password });
 
-    if (error) {
+    if (!result.success) {
       toast({
         variant: "destructive",
-        title: "Error al iniciar sesión",
-        description:
-          error.message === "Invalid login credentials"
-            ? "Credenciales inválidas. Verifica tu correo y contraseña."
-            : error.message,
+        title: TOAST_MESSAGES.auth.loginError,
+        description: result.error?.includes("Invalid login credentials")
+          ? TOAST_MESSAGES.auth.invalidCredentials
+          : result.error,
       });
     }
 
@@ -60,19 +43,19 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signUp(email, password, fullName);
+    const result = await signUp({ email, password, fullName });
 
-    if (error) {
+    if (!result.success) {
       toast({
         variant: "destructive",
-        title: "Error al registrarse",
-        description: error.message.includes("already registered")
-          ? "Este correo ya está registrado. Intenta iniciar sesión."
-          : error.message,
+        title: TOAST_MESSAGES.auth.signupError,
+        description: result.error?.includes("already registered")
+          ? TOAST_MESSAGES.auth.emailAlreadyRegistered
+          : result.error,
       });
     } else {
       toast({
-        title: "Cuenta creada",
+        title: TOAST_MESSAGES.auth.signupSuccess,
         description: "Tu cuenta ha sido creada exitosamente.",
       });
     }
@@ -81,11 +64,7 @@ export default function Login() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (
@@ -96,9 +75,9 @@ export default function Login() {
           <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-primary mb-3 md:mb-4">
             <GraduationCap className="h-7 w-7 md:h-8 md:w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">EduManager</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{APP_CONFIG.name}</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1 text-center">
-            Plataforma de Gestión Educativa
+            {APP_CONFIG.description}
           </p>
         </div>
 
@@ -161,7 +140,7 @@ export default function Login() {
 
                   <Button type="submit" className="w-full h-11" disabled={loading}>
                     {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <LoadingSpinner size="sm" />
                     ) : (
                       <>
                         Ingresar
@@ -231,7 +210,7 @@ export default function Login() {
 
                   <Button type="submit" className="w-full h-11" disabled={loading}>
                     {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <LoadingSpinner size="sm" />
                     ) : (
                       <>
                         Crear cuenta
@@ -252,7 +231,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-4 md:mt-6">
-          © 2024 EduManager. Todos los derechos reservados.
+          {APP_CONFIG.copyright}
         </p>
       </div>
     </div>

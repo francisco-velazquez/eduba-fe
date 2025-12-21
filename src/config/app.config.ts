@@ -1,7 +1,7 @@
 // Application configuration constants
 
 export const APP_CONFIG = {
-  name: "EduManager",
+  name: "Edubba",
   description: "Plataforma de Gestión Educativa",
   version: "1.0.0",
   copyright: `© ${new Date().getFullYear()} EduManager. Todos los derechos reservados.`,

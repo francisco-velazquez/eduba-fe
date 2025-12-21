@@ -3,7 +3,7 @@
  * Base configuration for all API requests
  */
 
-const API_BASE_URL = "https://edubba-bep-prb.onrender.com/api";
+const API_BASE_URL = "https://edubba-bep-prb.onrender.com";
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
@@ -102,10 +102,14 @@ class HttpClient {
     const { params, headers: customHeaders, ...restConfig } = config;
 
     try {
+      console.log(endpoint, params)
+      const headers = this.buildHeaders(customHeaders);
+      console.log(headers)
       const response = await fetch(this.buildUrl(endpoint, params), {
         ...restConfig,
-        headers: this.buildHeaders(customHeaders),
+        headers: headers,
       });
+      console.log(response)
 
       const status = response.status;
 

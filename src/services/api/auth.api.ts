@@ -18,7 +18,7 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  access_token: string;
+  accessToken: string;
   user: ApiUser;
 }
 
@@ -56,10 +56,11 @@ export const authApi = {
    * Login user
    */
   async login(credentials: LoginRequest) {
-    const response = await httpClient.post<AuthResponse>("/auth/login", credentials);
+    const response = await httpClient.post<AuthResponse>("/auth/login", credentials);    
     
-    if (response.data?.access_token) {
-      httpClient.setToken(response.data.access_token);
+    if (response.data?.accessToken) {
+      console.log(response, 'nepe')
+      httpClient.setToken(response.data.accessToken);
     }
     
     return response;
@@ -71,8 +72,8 @@ export const authApi = {
   async register(userData: RegisterRequest) {
     const response = await httpClient.post<AuthResponse>("/auth/register", userData);
     
-    if (response.data?.access_token) {
-      httpClient.setToken(response.data.access_token);
+    if (response.data?.accessToken) {
+      httpClient.setToken(response.data.accessToken);
     }
     
     return response;

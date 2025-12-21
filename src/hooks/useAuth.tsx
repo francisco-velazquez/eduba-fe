@@ -1,11 +1,9 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
-import { Session } from "@supabase/supabase-js";
 import { authService } from "@/services/auth.service";
 import type { AppRole, AuthUser, SignInCredentials, SignUpCredentials, AuthResult } from "@/types";
 
 interface AuthContextType {
   user: AuthUser | null;
-  session: Session | null;
   role: AppRole | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -18,59 +16,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = !!user && !!session;
+  const isAuthenticated = !!user;
 
-  const fetchUserRole = useCallback(async (userId: string) => {
-    const userRole = await authService.getUserRole(userId);
-    setRole(userRole);
-  }, []);
-
-  const mapSessionToUser = useCallback((session: Session | null): AuthUser | null => {
-    if (!session?.user) return null;
-    
-    return {
-      id: session.user.id,
-      email: session.user.email,
-      fullName: session.user.user_metadata?.full_name,
-    };
-  }, []);
-
+  // Initialize auth state on mount
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = authService.onAuthStateChange((session) => {
-      setSession(session);
-      setUser(mapSessionToUser(session));
+    const initializeAuth = async () => {
+      try {
+        const { user, role } = await authService.getSession();
+        setUser(user);
+        setRole(role);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Subscribe to auth state changes
+    const subscription = authService.onAuthStateChange((event, user, role) => {
+      setUser(user);
+      setRole(role);
       
-      // Defer role fetch with setTimeout to avoid deadlock
-      if (session?.user) {
-        setTimeout(() => {
-          fetchUserRole(session.user.id);
-        }, 0);
-      } else {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
         setRole(null);
       }
-      
-      setIsLoading(false);
     });
 
-    // THEN check for existing session
-    authService.getSession().then(({ session }) => {
-      setSession(session);
-      setUser(mapSessionToUser(session));
-      
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-      }
-      
-      setIsLoading(false);
-    });
+    // Initialize
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
-  }, [fetchUserRole, mapSessionToUser]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const signIn = useCallback(async (credentials: SignInCredentials): Promise<AuthResult> => {
     return authService.signIn(credentials);
@@ -82,15 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async (): Promise<AuthResult> => {
     const result = await authService.signOut();
-    if (result.success) {
-      setRole(null);
-    }
     return result;
   }, []);
 
   const value: AuthContextType = {
     user,
-    session,
     role,
     isLoading,
     isAuthenticated,

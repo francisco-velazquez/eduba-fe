@@ -3,3 +3,5 @@ export { useAuth, AuthProvider } from "./useAuth";
 export { useAuthRedirect } from "./useAuthRedirect";
 export { useToast } from "./use-toast";
 export { useIsMobile } from "./use-mobile";
+export { useGrades, useGrade, useCreateGrade, useUpdateGrade, useDeleteGrade } from "./useGrades";
+export { useSubjects, useSubject, useCreateSubject, useUpdateSubject, useDeleteSubject } from "./useSubjects";

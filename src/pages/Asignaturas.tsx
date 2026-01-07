@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AsignaturaDialog } from "@/components/dialogs/AsignaturaDialog";
+import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useSubjects, useDeleteSubject } from "@/hooks/useSubjects";
 import type { AppSubject } from "@/services/api/subjects.api";
@@ -17,6 +18,10 @@ import type { AppSubject } from "@/services/api/subjects.api";
 export default function Asignaturas() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedAsignatura, setSelectedAsignatura] = useState<AppSubject | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [asignaturaToDelete, setAsignaturaToDelete] = useState<AppSubject | null>(null);
+
   const { data: asignaturas = [], isLoading, error } = useSubjects();
   const deleteSubject = useDeleteSubject();
 
@@ -26,9 +31,28 @@ export default function Asignaturas() {
       a.maestro.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de eliminar esta asignatura?")) {
-      deleteSubject.mutate(id);
+  const handleEdit = (asignatura: AppSubject) => {
+    setSelectedAsignatura(asignatura);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (asignatura: AppSubject) => {
+    setAsignaturaToDelete(asignatura);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (asignaturaToDelete) {
+      await deleteSubject.mutateAsync(String(asignaturaToDelete.id));
+      setDeleteDialogOpen(false);
+      setAsignaturaToDelete(null);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setSelectedAsignatura(null);
     }
   };
 
@@ -96,13 +120,29 @@ export default function Asignaturas() {
               key={asignatura.id} 
               asignatura={asignatura} 
               index={index}
+              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           ))}
         </div>
       )}
 
-      <AsignaturaDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <AsignaturaDialog 
+        open={dialogOpen} 
+        onOpenChange={handleDialogClose}
+        asignatura={selectedAsignatura}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar Asignatura"
+        description={`¿Estás seguro de eliminar "${asignaturaToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteSubject.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
@@ -110,11 +150,13 @@ export default function Asignaturas() {
 function SubjectCard({ 
   asignatura, 
   index,
-  onDelete 
+  onEdit,
+  onDelete,
 }: { 
   asignatura: AppSubject; 
   index: number;
-  onDelete: (id: string) => void;
+  onEdit: (asignatura: AppSubject) => void;
+  onDelete: (asignatura: AppSubject) => void;
 }) {
   return (
     <div
@@ -145,13 +187,13 @@ function SubjectCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(asignatura)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="text-destructive"
-                onClick={() => onDelete(String(asignatura.id))}
+                onClick={() => onDelete(asignatura)}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Eliminar

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, MoreHorizontal, Mail, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Mail, Edit, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,23 +25,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlumnoDialog } from "@/components/dialogs/AlumnoDialog";
-import { PageHeader } from "@/components/common";
-
-const alumnosData = [
-  { id: 1, nombre: "María García", email: "maria.garcia@estudiante.edu", grado: "3° Primaria", matricula: "2024-001", estado: "activo" },
-  { id: 2, nombre: "Juan Pérez", email: "juan.perez@estudiante.edu", grado: "3° Primaria", matricula: "2024-002", estado: "activo" },
-  { id: 3, nombre: "Ana López", email: "ana.lopez@estudiante.edu", grado: "5° Primaria", matricula: "2024-003", estado: "activo" },
-  { id: 4, nombre: "Pedro Sánchez", email: "pedro.sanchez@estudiante.edu", grado: "1° Secundaria", matricula: "2024-004", estado: "activo" },
-  { id: 5, nombre: "Laura Ramírez", email: "laura.ramirez@estudiante.edu", grado: "2° Secundaria", matricula: "2024-005", estado: "inactivo" },
-  { id: 6, nombre: "Diego Torres", email: "diego.torres@estudiante.edu", grado: "6° Primaria", matricula: "2024-006", estado: "activo" },
-];
+import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
+import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
+import { useStudents, useDeleteStudent } from "@/hooks/useStudents";
+import { useGrades } from "@/hooks/useGrades";
+import type { AppStudent } from "@/services/api/students.api";
 
 export default function Alumnos() {
   const [search, setSearch] = useState("");
   const [gradoFilter, setGradoFilter] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedAlumno, setSelectedAlumno] = useState<AppStudent | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [alumnoToDelete, setAlumnoToDelete] = useState<AppStudent | null>(null);
 
-  const filteredAlumnos = alumnosData.filter((a) => {
+  const { data: alumnos = [], isLoading, error } = useStudents();
+  const { data: grados = [] } = useGrades();
+  const deleteStudent = useDeleteStudent();
+
+  const filteredAlumnos = alumnos.filter((a) => {
     const matchesSearch =
       a.nombre.toLowerCase().includes(search.toLowerCase()) ||
       a.matricula.toLowerCase().includes(search.toLowerCase());
@@ -49,7 +51,50 @@ export default function Alumnos() {
     return matchesSearch && matchesGrado;
   });
 
-  const grados = [...new Set(alumnosData.map((a) => a.grado))];
+  const uniqueGrados = [...new Set(alumnos.map((a) => a.grado))];
+
+  const handleEdit = (alumno: AppStudent) => {
+    setSelectedAlumno(alumno);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (alumno: AppStudent) => {
+    setAlumnoToDelete(alumno);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (alumnoToDelete) {
+      await deleteStudent.mutateAsync(alumnoToDelete.id);
+      setDeleteDialogOpen(false);
+      setAlumnoToDelete(null);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setSelectedAlumno(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Error al cargar alumnos"
+        description={error.message}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -84,7 +129,7 @@ export default function Alumnos() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos los grados</SelectItem>
-            {grados.map((grado) => (
+            {uniqueGrados.map((grado) => (
               <SelectItem key={grado} value={grado}>
                 {grado}
               </SelectItem>
@@ -98,175 +143,212 @@ export default function Alumnos() {
         <div className="stat-card p-4">
           <p className="text-xs md:text-sm text-muted-foreground">Total</p>
           <p className="text-xl md:text-2xl font-semibold text-foreground">
-            {alumnosData.length}
+            {alumnos.length}
           </p>
         </div>
         <div className="stat-card p-4">
           <p className="text-xs md:text-sm text-muted-foreground">Activos</p>
           <p className="text-xl md:text-2xl font-semibold text-success">
-            {alumnosData.filter((a) => a.estado === "activo").length}
+            {alumnos.filter((a) => a.estado === "activo").length}
           </p>
         </div>
         <div className="stat-card p-4">
           <p className="text-xs md:text-sm text-muted-foreground">Inactivos</p>
           <p className="text-xl md:text-2xl font-semibold text-muted-foreground">
-            {alumnosData.filter((a) => a.estado === "inactivo").length}
+            {alumnos.filter((a) => a.estado === "inactivo").length}
           </p>
         </div>
         <div className="stat-card p-4">
           <p className="text-xs md:text-sm text-muted-foreground">Grados</p>
-          <p className="text-xl md:text-2xl font-semibold text-primary">{grados.length}</p>
+          <p className="text-xl md:text-2xl font-semibold text-primary">{uniqueGrados.length}</p>
         </div>
       </div>
 
-      {/* Mobile Cards View */}
-      <div className="md:hidden space-y-3">
-        {filteredAlumnos.map((alumno, index) => (
-          <div
-            key={alumno.id}
-            className="bg-card rounded-xl border border-border shadow-card p-4 animate-fade-in"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-accent">
-                    {alumno.nombre
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </span>
+      {alumnos.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No hay alumnos"
+          description="Agrega tu primer alumno para comenzar"
+        />
+      ) : filteredAlumnos.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Sin resultados"
+          description="No se encontraron alumnos con ese criterio de búsqueda"
+        />
+      ) : (
+        <>
+          {/* Mobile Cards View */}
+          <div className="md:hidden space-y-3">
+            {filteredAlumnos.map((alumno, index) => (
+              <div
+                key={alumno.id}
+                className="bg-card rounded-xl border border-border shadow-card p-4 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-accent">
+                        {alumno.nombre
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{alumno.nombre}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        <span className="truncate">{alumno.email}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(alumno)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => handleDelete(alumno)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground truncate">{alumno.nombre}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    <span className="truncate">{alumno.email}</span>
-                  </p>
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <code className="text-xs bg-muted px-2 py-1 rounded">{alumno.matricula}</code>
+                  <Badge variant="outline" className="font-normal text-xs">
+                    {alumno.grado}
+                  </Badge>
+                  <Badge
+                    variant={alumno.estado === "activo" ? "default" : "secondary"}
+                    className={
+                      alumno.estado === "activo" ? "bg-success/10 text-success hover:bg-success/20" : ""
+                    }
+                  >
+                    {alumno.estado === "activo" ? "Activo" : "Inactivo"}
+                  </Badge>
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
-              <code className="text-xs bg-muted px-2 py-1 rounded">{alumno.matricula}</code>
-              <Badge variant="outline" className="font-normal text-xs">
-                {alumno.grado}
-              </Badge>
-              <Badge
-                variant={alumno.estado === "activo" ? "default" : "secondary"}
-                className={
-                  alumno.estado === "activo" ? "bg-success/10 text-success hover:bg-success/20" : ""
-                }
-              >
-                {alumno.estado === "activo" ? "Activo" : "Inactivo"}
-              </Badge>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-card rounded-xl border border-border shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="table-header hover:bg-muted/50">
+                    <TableHead>Alumno</TableHead>
+                    <TableHead>Matrícula</TableHead>
+                    <TableHead>Grado</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAlumnos.map((alumno, index) => (
+                    <TableRow
+                      key={alumno.id}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-accent">
+                              {alumno.nombre
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{alumno.nombre}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {alumno.email}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-sm bg-muted px-2 py-1 rounded">{alumno.matricula}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal">
+                          {alumno.grado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={alumno.estado === "activo" ? "default" : "secondary"}
+                          className={
+                            alumno.estado === "activo"
+                              ? "bg-success/10 text-success hover:bg-success/20"
+                              : ""
+                          }
+                        >
+                          {alumno.estado === "activo" ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(alumno)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDelete(alumno)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
-      {/* Desktop Table */}
-      <div className="hidden md:block bg-card rounded-xl border border-border shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="table-header hover:bg-muted/50">
-                <TableHead>Alumno</TableHead>
-                <TableHead>Matrícula</TableHead>
-                <TableHead>Grado</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAlumnos.map((alumno, index) => (
-                <TableRow
-                  key={alumno.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-accent">
-                          {alumno.nombre
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{alumno.nombre}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {alumno.email}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-sm bg-muted px-2 py-1 rounded">{alumno.matricula}</code>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-normal">
-                      {alumno.grado}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={alumno.estado === "activo" ? "default" : "secondary"}
-                      className={
-                        alumno.estado === "activo"
-                          ? "bg-success/10 text-success hover:bg-success/20"
-                          : ""
-                      }
-                    >
-                      {alumno.estado === "activo" ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+      <AlumnoDialog 
+        open={dialogOpen} 
+        onOpenChange={handleDialogClose}
+        alumno={selectedAlumno}
+      />
 
-      <AlumnoDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar Alumno"
+        description={`¿Estás seguro de eliminar a "${alumnoToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteStudent.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

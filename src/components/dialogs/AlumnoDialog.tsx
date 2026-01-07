@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,74 +17,173 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCreateStudent, useUpdateStudent } from "@/hooks/useStudents";
+import { useGrades } from "@/hooks/useGrades";
+import type { AppStudent } from "@/services/api/students.api";
 
 interface AlumnoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  alumno?: AppStudent | null;
 }
 
-export function AlumnoDialog({ open, onOpenChange }: AlumnoDialogProps) {
+export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [gradoId, setGradoId] = useState("");
+  const [isActive, setIsActive] = useState("activo");
+
+  const createStudent = useCreateStudent();
+  const updateStudent = useUpdateStudent();
+  const { data: grados = [] } = useGrades();
+
+  const isEditing = !!alumno;
+  const isLoading = createStudent.isPending || updateStudent.isPending;
+
+  useEffect(() => {
+    if (open && alumno) {
+      setFirstName(alumno.firstName);
+      setLastName(alumno.lastName);
+      setEmail(alumno.email);
+      setGradoId(alumno.gradoId ?? "");
+      setIsActive(alumno.estado);
+      setPassword("");
+    } else if (!open) {
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setGradoId("");
+      setIsActive("activo");
+    }
+  }, [open, alumno, grados]);
+
+  const handleSubmit = async () => {
+    try {
+      if (isEditing && alumno) {
+        await updateStudent.mutateAsync({
+          id: alumno.id,
+          data: {
+            firstName,
+            lastName,
+            email,
+            gradeId: gradoId || undefined,
+            isActive: isActive === "activo",
+          },
+        });
+      } else {
+        await createStudent.mutateAsync({
+          firstName,
+          lastName,
+          email,
+          password,
+          gradeId: gradoId || undefined,
+        });
+      }
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Agregar Nuevo Alumno</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Alumno" : "Nuevo Alumno"}</DialogTitle>
           <DialogDescription>
-            Complete los datos del nuevo estudiante. Todos los campos son obligatorios.
+            {isEditing
+              ? "Modifica los datos del alumno."
+              : "Ingrese los datos del nuevo estudiante."
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nombre">Nombre</Label>
-              <Input id="nombre" placeholder="María" />
+              <Input
+                id="nombre"
+                placeholder="Nombre"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="apellido">Apellido</Label>
-              <Input id="apellido" placeholder="García" />
+              <Input
+                id="apellido"
+                placeholder="Apellido"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Correo Electrónico</Label>
-            <Input id="email" type="email" placeholder="alumno@escuela.edu" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="correo@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
+          {!isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="grado">Grado Académico</Label>
-            <Select>
+            <Select value={gradoId} onValueChange={setGradoId}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar grado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1-primaria">1° Primaria</SelectItem>
-                <SelectItem value="2-primaria">2° Primaria</SelectItem>
-                <SelectItem value="3-primaria">3° Primaria</SelectItem>
-                <SelectItem value="4-primaria">4° Primaria</SelectItem>
-                <SelectItem value="5-primaria">5° Primaria</SelectItem>
-                <SelectItem value="6-primaria">6° Primaria</SelectItem>
-                <SelectItem value="1-secundaria">1° Secundaria</SelectItem>
-                <SelectItem value="2-secundaria">2° Secundaria</SelectItem>
-                <SelectItem value="3-secundaria">3° Secundaria</SelectItem>
+                {grados.map((grado) => (
+                  <SelectItem key={grado.id} value={String(grado.id)}>
+                    {grado.nombre}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="estado">Estado</Label>
-            <Select defaultValue="activo">
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="inactivo">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado</Label>
+              <Select value={isActive} onValueChange={setIsActive}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button className="gradient-primary border-0">Guardar Alumno</Button>
+          <Button
+            className="gradient-primary border-0"
+            onClick={handleSubmit}
+            disabled={!firstName || !lastName || !email || (!isEditing && !password) || isLoading}
+          >
+            {isLoading ? "Guardando..." : isEditing ? "Actualizar Alumno" : "Guardar Alumno"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

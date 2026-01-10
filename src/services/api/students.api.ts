@@ -7,46 +7,58 @@ import { httpClient } from "./http-client";
 
 // API Types
 export interface ApiStudent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  enrollmentNumber?: string;
-  isActive: boolean;
-  grade?: { id: string; name: string };
-  gradeId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  userId: string;
+  enrollmentCode: string;
+  cureentGrade: { // Nota: Se mantiene el nombre del JSON anidado
+    id: number | string;
+    name: string;
+    level: string;
+    code: string;
+    isActive: boolean;
+  } | null;
+  user: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    isActive: boolean;
+    email: string;
+  };
 }
 
 export interface CreateStudentDto {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
-  gradeId?: string;
+  password?: string;
+  gradeId?: string | number;
+  dateOfBirth?: string;
+  enrollmentCode?: string;
 }
 
 export interface UpdateStudentDto {
   firstName?: string;
   lastName?: string;
   email?: string;
-  gradeId?: string;
+  gradeId?: string | number;
   isActive?: boolean;
+  enrollmentCode?: string;
+  dateOfBirth?: string;
+  password?: string;
 }
 
 // Map API student to app format
 export function mapApiStudent(apiStudent: ApiStudent) {
   return {
-    id: apiStudent.id,
-    nombre: `${apiStudent.firstName} ${apiStudent.lastName}`.trim(),
-    firstName: apiStudent.firstName,
-    lastName: apiStudent.lastName,
-    email: apiStudent.email,
-    matricula: apiStudent.enrollmentNumber ?? apiStudent.id.slice(0, 8).toUpperCase(),
-    grado: apiStudent.grade?.name ?? "Sin asignar",
-    gradoId: apiStudent.gradeId ?? apiStudent.grade?.id,
-    estado: apiStudent.isActive ? "activo" : "inactivo",
+    id: apiStudent.userId,
+    nombre: `${apiStudent.user.firstName} ${apiStudent.user.lastName}`.trim(),
+    firstName: apiStudent.user.firstName,
+    lastName: apiStudent.user.lastName,
+    email: apiStudent.user.email,
+    matricula: apiStudent.enrollmentCode,
+    grado: apiStudent.cureentGrade?.name ?? "Sin asignar",
+    gradoId: apiStudent.cureentGrade?.id.toString() ?? null,
+    estado: apiStudent.user.isActive ? "activo" : "inactivo",
+    fechaNacimiento: apiStudent.user.dateOfBirth,
   };
 }
 

@@ -3,7 +3,7 @@
  * Base configuration for all API requests
  */
 
-const API_BASE_URL = "https://edubba-bep-prb.onrender.com";
+const API_BASE_URL = "http://localhost:3000";
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;

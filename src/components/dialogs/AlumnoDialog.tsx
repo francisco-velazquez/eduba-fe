@@ -32,6 +32,8 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [enrollmentCode, setEnrollmentCode] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [gradoId, setGradoId] = useState("");
   const [isActive, setIsActive] = useState("activo");
 
@@ -47,6 +49,12 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
       setFirstName(alumno.firstName);
       setLastName(alumno.lastName);
       setEmail(alumno.email);
+      setEnrollmentCode(alumno.matricula ?? "");
+      // Convert date from ISO 8601 to YYYY-MM-DD format for input type="date"
+      const fechaNacimiento = alumno.fechaNacimiento 
+        ? new Date(alumno.fechaNacimiento).toISOString().split('T')[0]
+        : "";
+      setDateOfBirth(fechaNacimiento);
       setGradoId(alumno.gradoId ?? "");
       setIsActive(alumno.estado);
       setPassword("");
@@ -55,6 +63,8 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
       setLastName("");
       setEmail("");
       setPassword("");
+      setEnrollmentCode("");
+      setDateOfBirth("");
       setGradoId("");
       setIsActive("activo");
     }
@@ -69,6 +79,9 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
             firstName,
             lastName,
             email,
+            enrollmentCode: enrollmentCode || undefined,
+            dateOfBirth: dateOfBirth || undefined,
+            password: password || undefined,
             gradeId: gradoId || undefined,
             isActive: isActive === "activo",
           },
@@ -79,6 +92,8 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
           lastName,
           email,
           password,
+          enrollmentCode: enrollmentCode || undefined,
+          dateOfBirth: dateOfBirth || undefined,
           gradeId: gradoId || undefined,
         });
       }
@@ -131,18 +146,36 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          {!isEditing && (
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="matricula">Matrícula</Label>
+            <Input
+              id="matricula"
+              placeholder="Número de matrícula"
+              value={enrollmentCode}
+              onChange={(e) => setEnrollmentCode(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
+            <Input
+              id="fechaNacimiento"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              {isEditing ? "Nueva Contraseña (opcional)" : "Contraseña"}
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder={isEditing ? "Dejar vacío para mantener la actual" : "••••••••"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="grado">Grado Académico</Label>
             <Select value={gradoId} onValueChange={setGradoId}>

@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateSubject, useUpdateSubject } from "@/hooks/useSubjects";
+import { Switch } from "@/components/ui/switch";
+import { useCreateSubject, useUpdateSubject, useSubject } from "@/hooks/useSubjects";
 import { useGrades } from "@/hooks/useGrades";
 import type { AppSubject } from "@/services/api/subjects.api";
 
@@ -33,42 +34,78 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
   const [descripcion, setDescripcion] = useState("");
   const [codigo, setCodigo] = useState("");
   const [gradoId, setGradoId] = useState("");
+  const [isActive, setIsActive] = useState(true);
   
   const createSubject = useCreateSubject();
   const updateSubject = useUpdateSubject();
   const { data: grados = [] } = useGrades();
   
+  // Fetch subject data when dialog opens in edit mode
   const isEditing = !!asignatura;
-  const isLoading = createSubject.isPending || updateSubject.isPending;
+  const asignaturaId = asignatura?.id ? String(asignatura.id) : "";
+  const { data: fetchedAsignatura, isLoading: isLoadingSubject } = useSubject(
+    asignaturaId,
+    open && !!asignaturaId // Only fetch when dialog is open and we have an ID
+  );
+  
+  // When editing, prioritize fetched data from API. Only use prop data if fetch hasn't completed yet
+  // When creating, subjectData will be null
+  const subjectData = isEditing && open 
+    ? (fetchedAsignatura || (isLoadingSubject ? null : asignatura))
+    : null;
+  const isLoading = createSubject.isPending || updateSubject.isPending || (isEditing && isLoadingSubject);
 
   useEffect(() => {
-    if (open && asignatura) {
-      setNombre(asignatura.nombre);
-      setDescripcion(asignatura.descripcion);
-      setCodigo(asignatura.codigo ?? "");
-      // Find grade ID from grades list
-      const matchingGrade = grados.find(g => asignatura.grados.includes(g.nombre));
-      setGradoId(matchingGrade?.id ?? "");
-    } else if (!open) {
+    if (open) {
+      if (subjectData) {
+        // Populate form with subject data (fetched or from prop)
+        setNombre(subjectData.nombre);
+        setDescripcion(subjectData.descripcion);
+        setCodigo(subjectData.codigo ?? "");
+        setIsActive(subjectData.isActive ?? true);
+        // Use gradeId directly from the mapped subject data
+        // If gradeId is not available, try to find it by name as fallback
+        if (subjectData.gradeId) {
+          setGradoId(String(subjectData.gradeId));
+        } else if (subjectData.grados && subjectData.grados.length > 0) {
+          // Fallback: find grade ID by name
+          const matchingGrade = grados.find(g => 
+            subjectData.grados.includes(g.nombre)
+          );
+          setGradoId(matchingGrade?.id ?? "");
+        } else {
+          setGradoId("");
+        }
+      } else if (!isEditing) {
+        // Reset form when opening for creation (new subject)
+        setNombre("");
+        setDescripcion("");
+        setCodigo("");
+        setGradoId("");
+        setIsActive(true);
+      }
+    } else {
       // Reset form when closing
       setNombre("");
       setDescripcion("");
       setCodigo("");
       setGradoId("");
+      setIsActive(true);
     }
-  }, [open, asignatura, grados]);
+  }, [open, subjectData, grados, isEditing]);
 
   const handleSubmit = async () => {
     const data = {
       name: nombre,
       description: descripcion || undefined,
       code: codigo || undefined,
-      gradeId: gradoId || undefined,
+      gradeId: Number(gradoId) || 0,
+      isActive: isActive,
     };
 
     try {
-      if (isEditing && asignatura) {
-        await updateSubject.mutateAsync({ id: String(asignatura.id), data });
+      if (isEditing && subjectData) {
+        await updateSubject.mutateAsync({ id: String(subjectData.id), data });
       } else {
         await createSubject.mutateAsync(data);
       }
@@ -91,6 +128,12 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {isEditing && isLoadingSubject ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-muted-foreground">Cargando información de la asignatura...</div>
+            </div>
+          ) : (
+            <>
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre de la Asignatura</Label>
             <Input 
@@ -98,6 +141,7 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
               placeholder="Ej: Matemáticas"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
+              disabled={isLoadingSubject}
             />
           </div>
           <div className="space-y-2">
@@ -108,11 +152,12 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
               rows={3}
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
+              disabled={isLoadingSubject}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="grado">Grado</Label>
-            <Select value={gradoId} onValueChange={setGradoId}>
+            <Select value={gradoId} onValueChange={setGradoId} disabled={isLoadingSubject}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar grado" />
               </SelectTrigger>
@@ -132,8 +177,27 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
               placeholder="Ej: MAT-101"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value)}
+              disabled={isLoadingSubject}
             />
           </div>
+          <div className="flex items-center justify-between space-x-2 rounded-lg border border-border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="isActive" className="text-base">
+                Estado
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {isActive ? "La asignatura está activa" : "La asignatura está inactiva"}
+              </div>
+            </div>
+            <Switch
+              id="isActive"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+              disabled={isLoadingSubject}
+            />
+          </div>
+          </>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>

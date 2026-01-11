@@ -6,12 +6,22 @@
 import { httpClient } from "./http-client";
 
 // API Types
+export interface ApiGrade {
+  id: number | string;
+  name: string;
+  level?: string;
+  code?: string;
+  isActive?: boolean;
+}
+
 export interface ApiSubject {
-  id: string;
+  id: number | string;
   name: string;
   description?: string;
   code?: string;
-  gradeId?: string;
+  isActive?: boolean;
+  grade?: ApiGrade;
+  gradeId?: number | string;
   gradeName?: string;
   grades?: { id: string; name: string }[];
   teacherId?: string;
@@ -25,18 +35,20 @@ export interface CreateSubjectDto {
   name: string;
   description?: string;
   code?: string;
-  gradeId?: string;
+  gradeId?: number;
   teacherId?: string;
   color?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateSubjectDto {
   name?: string;
   description?: string;
   code?: string;
-  gradeId?: string;
+  gradeId?: number;
   teacherId?: string;
   color?: string;
+  isActive?: boolean;
 }
 
 // Color mapping for subjects
@@ -55,18 +67,40 @@ const defaultColors = [
 
 // Map API subject to app format
 export function mapApiSubject(apiSubject: ApiSubject, index: number = 0) {
-  const gradeNames = apiSubject.grades?.map(g => g.name) ?? 
-    (apiSubject.gradeName ? [apiSubject.gradeName] : []);
+  // Handle grade data: prefer grade object, then gradeName, then grades array
+  let gradeId: string | undefined;
+  const gradeNames: string[] = [];
+
+  if (apiSubject.grade) {
+    // Grade object from API (e.g., from getById endpoint)
+    gradeId = String(apiSubject.grade.id);
+    gradeNames.push(apiSubject.grade.name);
+  } else if (apiSubject.gradeId) {
+    // Direct gradeId
+    gradeId = String(apiSubject.gradeId);
+    if (apiSubject.gradeName) {
+      gradeNames.push(apiSubject.gradeName);
+    }
+  } else if (apiSubject.grades && apiSubject.grades.length > 0) {
+    // Grades array (from getAll endpoint)
+    gradeNames.push(...apiSubject.grades.map(g => g.name));
+    gradeId = apiSubject.grades[0]?.id ? String(apiSubject.grades[0].id) : undefined;
+  } else if (apiSubject.gradeName) {
+    // Fallback to gradeName only
+    gradeNames.push(apiSubject.gradeName);
+  }
 
   return {
-    id: apiSubject.id,
+    id: String(apiSubject.id),
     nombre: apiSubject.name,
     descripcion: apiSubject.description ?? "",
     codigo: apiSubject.code,
     grados: gradeNames,
+    gradeId: gradeId, // Add gradeId to the mapped subject
     maestro: apiSubject.teacherName ?? "Sin asignar",
     maestroId: apiSubject.teacherId,
     color: apiSubject.color ?? defaultColors[index % defaultColors.length],
+    isActive: apiSubject.isActive ?? true, // Default to active if not specified
   };
 }
 

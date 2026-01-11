@@ -22,7 +22,7 @@ export function useSubjects() {
   });
 }
 
-export function useSubject(id: string) {
+export function useSubject(id: string, enabled: boolean = true) {
   return useQuery({
     queryKey: [...SUBJECTS_KEY, id],
     queryFn: async () => {
@@ -32,7 +32,7 @@ export function useSubject(id: string) {
       }
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && enabled,
   });
 }
 

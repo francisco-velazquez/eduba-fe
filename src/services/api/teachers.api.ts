@@ -12,6 +12,7 @@ export interface ApiTeacher {
   lastName: string;
   email: string;
   phone?: string;
+  dateOfBirth?: string;
   isActive: boolean;
   subjects?: { id: string; name: string }[];
   createdAt?: string;
@@ -23,6 +24,7 @@ export interface CreateTeacherDto {
   lastName: string;
   email: string;
   phone?: string;
+  dateOfBirth?: string;
   password: string;
 }
 
@@ -31,6 +33,7 @@ export interface UpdateTeacherDto {
   lastName?: string;
   email?: string;
   phone?: string;
+  dateOfBirth?: string;
   isActive?: boolean;
 }
 
@@ -45,6 +48,7 @@ export function mapApiTeacher(apiTeacher: ApiTeacher) {
     lastName: apiTeacher.lastName,
     email: apiTeacher.email,
     telefono: apiTeacher.phone ?? "",
+    fechaNacimiento: apiTeacher.dateOfBirth,
     asignaturas: subjectNames,
     estado: apiTeacher.isActive ? "activo" : "inactivo",
   };

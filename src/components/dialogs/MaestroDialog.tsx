@@ -32,6 +32,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [isActive, setIsActive] = useState("activo");
 
   const createTeacher = useCreateTeacher();
@@ -46,6 +47,11 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
       setLastName(maestro.lastName);
       setEmail(maestro.email);
       setPhone(maestro.telefono);
+      // Convert date from ISO 8601 to YYYY-MM-DD format for input type="date"
+      const fechaNacimiento = maestro.fechaNacimiento 
+        ? new Date(maestro.fechaNacimiento).toISOString().split('T')[0]
+        : "";
+      setDateOfBirth(fechaNacimiento);
       setIsActive(maestro.estado);
       setPassword("");
     } else if (!open) {
@@ -54,6 +60,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
       setEmail("");
       setPhone("");
       setPassword("");
+      setDateOfBirth("");
       setIsActive("activo");
     }
   }, [open, maestro]);
@@ -68,6 +75,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
             lastName,
             email,
             phone: phone || undefined,
+            dateOfBirth: dateOfBirth || undefined,
             isActive: isActive === "activo",
           },
         });
@@ -77,6 +85,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
           lastName,
           email,
           phone: phone || undefined,
+          dateOfBirth: dateOfBirth || undefined,
           password,
         });
       }
@@ -138,6 +147,15 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
+            <Input
+              id="fechaNacimiento"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
+          </div>
           {!isEditing && (
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
@@ -172,7 +190,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
           <Button
             className="gradient-primary border-0"
             onClick={handleSubmit}
-            disabled={!firstName || !lastName || !email || (!isEditing && !password) || isLoading}
+            disabled={!firstName || !lastName || !email || !dateOfBirth || (!isEditing && !password) || isLoading}
           >
             {isLoading ? "Guardando..." : isEditing ? "Actualizar Maestro" : "Guardar Maestro"}
           </Button>

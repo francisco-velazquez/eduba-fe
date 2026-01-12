@@ -314,13 +314,15 @@ export default function Alumnos() {
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => handleDelete(alumno)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
+                            {alumno.estado === "activo" && (
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleDelete(alumno)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Baja
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -342,9 +344,9 @@ export default function Alumnos() {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Eliminar Alumno"
-        description={`¿Estás seguro de eliminar a "${alumnoToDelete?.nombre}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
+        title="Baja de Alumno"
+        description={`¿Estás seguro de dar de baja a "${alumnoToDelete?.nombre}"?`}
+        confirmText="Sí"
         variant="danger"
         isLoading={deleteStudent.isPending}
         onConfirm={confirmDelete}

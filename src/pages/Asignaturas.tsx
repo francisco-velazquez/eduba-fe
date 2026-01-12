@@ -158,13 +158,19 @@ function SubjectCard({
   onEdit: (asignatura: AppSubject) => void;
   onDelete: (asignatura: AppSubject) => void;
 }) {
+  const isActive = asignatura.isActive ?? true;
+  
   return (
     <div
-      className="bg-card rounded-xl border border-border shadow-card overflow-hidden group animate-fade-in hover:shadow-elevated transition-all"
+      className={`rounded-xl border-2 overflow-hidden group animate-fade-in transition-all ${
+        isActive 
+          ? "bg-card border-border shadow-card hover:shadow-elevated" 
+          : "bg-slate-200/80 dark:bg-slate-700/80 border-slate-400 dark:border-slate-500"
+      }`}
       style={{ animationDelay: `${index * 50}ms` }}
     >
       {/* Color Header */}
-      <div className={`h-2 ${asignatura.color}`} />
+      <div className={`h-2 ${isActive ? asignatura.color : "bg-slate-500 dark:bg-slate-400"}`} />
 
       <div className="p-4 md:p-5">
         <div className="flex items-start justify-between">
@@ -191,13 +197,15 @@ function SubjectCard({
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="text-destructive"
-                onClick={() => onDelete(asignatura)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar
-              </DropdownMenuItem>
+              {isActive && (
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => onDelete(asignatura)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

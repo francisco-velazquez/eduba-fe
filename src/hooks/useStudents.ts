@@ -108,8 +108,8 @@ export function useDeleteStudent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast({
-        title: "Alumno eliminado",
-        description: "El alumno se ha eliminado correctamente",
+        title: "Baja de alumno",
+        description: "El alumno ha sido dado de baja correctamente",
       });
     },
     onError: (error: Error) => {

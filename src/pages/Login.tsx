@@ -90,15 +90,6 @@ export default function Login() {
           </CardHeader>
           <CardContent className="px-4 md:px-6">
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4 md:mb-6">
-                <TabsTrigger value="login" className="text-sm">
-                  Iniciar Sesión
-                </TabsTrigger>
-                <TabsTrigger value="register" className="text-sm">
-                  Registrarse
-                </TabsTrigger>
-              </TabsList>
-
               <TabsContent value="login">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
@@ -148,81 +139,6 @@ export default function Login() {
                       </>
                     )}
                   </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="register">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name" className="text-sm">
-                      Nombre completo
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-name"
-                        type="text"
-                        placeholder="Juan Pérez"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10 h-11"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-sm">
-                      Correo electrónico
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="tu@correo.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 h-11"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password" className="text-sm">
-                      Contraseña
-                    </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="Mínimo 6 caracteres"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 h-11"
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-11" disabled={loading}>
-                    {loading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <>
-                        Crear cuenta
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-
-                  <p className="text-xs text-muted-foreground text-center">
-                    Las cuentas nuevas se registran como alumno por defecto. Un administrador puede
-                    cambiar tu rol.
-                  </p>
                 </form>
               </TabsContent>
             </Tabs>

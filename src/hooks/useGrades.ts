@@ -22,7 +22,7 @@ export function useGrades() {
   });
 }
 
-export function useGrade(id: string) {
+export function useGrade(id: string, enabled: boolean = true) {
   return useQuery({
     queryKey: [...GRADES_KEY, id],
     queryFn: async () => {
@@ -32,7 +32,7 @@ export function useGrade(id: string) {
       }
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && enabled,
   });
 }
 

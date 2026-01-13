@@ -23,3 +23,6 @@ export type { ApiTeacher, CreateTeacherDto, UpdateTeacherDto, AppTeacher } from 
 
 export { studentsApi, mapApiStudent } from "./students.api";
 export type { ApiStudent, CreateStudentDto, UpdateStudentDto, AppStudent } from "./students.api";
+
+export { assignmentsApi } from "./assignments.api";
+export type { AssignSubjectsDto, UpdateStudentGradeDto, GradeSubjectResponse } from "./assignments.api";

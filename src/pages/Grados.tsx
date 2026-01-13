@@ -8,21 +8,53 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GradoDialog } from "@/components/dialogs/GradoDialog";
+import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useGrades, useDeleteGrade } from "@/hooks/useGrades";
 import type { AppGrade } from "@/services/api/grades.api";
 
 export default function Grados() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedGrado, setSelectedGrado] = useState<AppGrade | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [gradoToDelete, setGradoToDelete] = useState<AppGrade | null>(null);
+
   const { data: grados = [], isLoading, error } = useGrades();
   const deleteGrade = useDeleteGrade();
 
   const primaria = grados.filter((g) => g.nivel?.toLowerCase().includes("primaria"));
   const secundaria = grados.filter((g) => g.nivel?.toLowerCase().includes("secundaria"));
+  const preescolar = grados.filter((g) => g.nivel?.toLowerCase().includes("preescolar"));
+  const preparatoria = grados.filter((g) => g.nivel?.toLowerCase().includes("preparatoria"));
+  const otros = grados.filter((g) => 
+    !g.nivel?.toLowerCase().includes("primaria") &&
+    !g.nivel?.toLowerCase().includes("secundaria") &&
+    !g.nivel?.toLowerCase().includes("preescolar") &&
+    !g.nivel?.toLowerCase().includes("preparatoria")
+  );
 
-  const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de eliminar este grado?")) {
-      deleteGrade.mutate(id);
+  const handleEdit = (grado: AppGrade) => {
+    setSelectedGrado(grado);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (grado: AppGrade) => {
+    setGradoToDelete(grado);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (gradoToDelete) {
+      await deleteGrade.mutateAsync(String(gradoToDelete.id));
+      setDeleteDialogOpen(false);
+      setGradoToDelete(null);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setSelectedGrado(null);
     }
   };
 
@@ -47,13 +79,13 @@ export default function Grados() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEdit(grado)}>
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-destructive"
-              onClick={() => handleDelete(String(grado.id))}
+              onClick={() => handleDelete(grado)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar
@@ -84,6 +116,22 @@ export default function Grados() {
       </div>
     </div>
   );
+
+  const renderGradeSection = (title: string, grades: AppGrade[], startIndex: number) => {
+    if (grades.length === 0) return null;
+    return (
+      <div>
+        <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">
+          Nivel {title}
+        </h2>
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {grades.map((grado, index) => (
+            <GradoCard key={grado.id} grado={grado} index={startIndex + index} />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -126,38 +174,31 @@ export default function Grados() {
           description="Agrega tu primer grado académico para comenzar"
         />
       ) : (
-        <>
-          {/* Primaria Section */}
-          {primaria.length > 0 && (
-            <div>
-              <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">
-                Nivel Primaria
-              </h2>
-              <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {primaria.map((grado, index) => (
-                  <GradoCard key={grado.id} grado={grado} index={index} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Secundaria Section */}
-          {secundaria.length > 0 && (
-            <div>
-              <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">
-                Nivel Secundaria
-              </h2>
-              <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {secundaria.map((grado, index) => (
-                  <GradoCard key={grado.id} grado={grado} index={index + primaria.length} />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <div className="space-y-6 md:space-y-8">
+          {renderGradeSection("Preescolar", preescolar, 0)}
+          {renderGradeSection("Primaria", primaria, preescolar.length)}
+          {renderGradeSection("Secundaria", secundaria, preescolar.length + primaria.length)}
+          {renderGradeSection("Preparatoria", preparatoria, preescolar.length + primaria.length + secundaria.length)}
+          {renderGradeSection("Otros", otros, preescolar.length + primaria.length + secundaria.length + preparatoria.length)}
+        </div>
       )}
 
-      <GradoDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <GradoDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        grado={selectedGrado}
+      />
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar Grado"
+        description={`¿Estás seguro de eliminar "${gradoToDelete?.nombre}"? Esta acción no se puede deshacer y podría afectar las asignaturas asociadas.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteGrade.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

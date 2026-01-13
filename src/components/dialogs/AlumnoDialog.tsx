@@ -36,6 +36,7 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gradoId, setGradoId] = useState("");
   const [isActive, setIsActive] = useState("activo");
+  const [phone, setPhone] = useState("");
 
   const createStudent = useCreateStudent();
   const updateStudent = useUpdateStudent();
@@ -84,6 +85,7 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
             password: password || undefined,
             gradeId: gradoId || undefined,
             isActive: isActive === "activo",
+            number_phone: phone || undefined,
           },
         });
       } else {
@@ -95,6 +97,7 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
           enrollmentCode: enrollmentCode || undefined,
           dateOfBirth: dateOfBirth || undefined,
           gradeId: gradoId || undefined,
+          number_phone: phone || undefined,
         });
       }
       onOpenChange(false);
@@ -155,6 +158,15 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
               onChange={(e) => setEnrollmentCode(e.target.value)}
             />
           </div>
+            <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                    id="phone"
+                    placeholder="Número de teléfono"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                />
+            </div>
           <div className="space-y-2">
             <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
             <Input

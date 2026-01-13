@@ -59,7 +59,6 @@ export const authApi = {
     const response = await httpClient.post<AuthResponse>("/auth/login", credentials);    
     
     if (response.data?.accessToken) {
-      console.log(response, 'nepe')
       httpClient.setToken(response.data.accessToken);
     }
     

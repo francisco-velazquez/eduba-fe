@@ -210,10 +210,11 @@ export default function Maestros() {
                 <TableHeader>
                   <TableRow className="table-header hover:bg-muted/50">
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Contacto</TableHead>
-                    <TableHead>Asignaturas</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Teléfono</TableHead>
+                    <TableHead>Número de empleado</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -236,20 +237,9 @@ export default function Maestros() {
                           <span className="font-medium text-foreground">{maestro.nombre}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-3.5 w-3.5" />
-                            {maestro.email}
-                          </div>
-                          {maestro.telefono && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-3.5 w-3.5" />
-                              {maestro.telefono}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
+                      <TableCell>{maestro.email}</TableCell>
+                      <TableCell>{maestro.telefono || '-'}</TableCell>
+                      <TableCell>{maestro.employeeNumber || '-'}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {maestro.asignaturas.length > 0 ? (

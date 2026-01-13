@@ -251,6 +251,7 @@ export default function Alumnos() {
                   <TableRow className="table-header hover:bg-muted/50">
                     <TableHead>Alumno</TableHead>
                     <TableHead>Matrícula</TableHead>
+                    <TableHead>Teléfono</TableHead>
                     <TableHead>Grado</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -284,6 +285,9 @@ export default function Alumnos() {
                       </TableCell>
                       <TableCell>
                         <code className="text-sm bg-muted px-2 py-1 rounded">{alumno.matricula}</code>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-sm bg-muted px-2 py-1 rounded">{alumno.telefono}</code>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">

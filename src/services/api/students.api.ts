@@ -22,6 +22,7 @@ export interface ApiStudent {
     dateOfBirth: string;
     isActive: boolean;
     email: string;
+    number_phone?: string;
   };
 }
 
@@ -32,6 +33,7 @@ export interface CreateStudentDto {
   password?: string;
   gradeId?: string | number;
   dateOfBirth?: string;
+  number_phone?: string;
   enrollmentCode?: string;
 }
 
@@ -42,6 +44,7 @@ export interface UpdateStudentDto {
   gradeId?: string | number;
   isActive?: boolean;
   enrollmentCode?: string;
+  number_phone?: string;
   dateOfBirth?: string;
   password?: string;
 }
@@ -59,6 +62,7 @@ export function mapApiStudent(apiStudent: ApiStudent) {
     gradoId: apiStudent.cureentGrade?.id.toString() ?? null,
     estado: apiStudent.user.isActive ? "activo" : "inactivo",
     fechaNacimiento: apiStudent.user.dateOfBirth,
+    telefono: apiStudent.user.number_phone,
   };
 }
 

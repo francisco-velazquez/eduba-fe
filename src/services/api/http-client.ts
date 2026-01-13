@@ -102,14 +102,11 @@ class HttpClient {
     const { params, headers: customHeaders, ...restConfig } = config;
 
     try {
-      console.log(endpoint, params)
       const headers = this.buildHeaders(customHeaders);
-      console.log(headers)
       const response = await fetch(this.buildUrl(endpoint, params), {
         ...restConfig,
         headers: headers,
       });
-      console.log(response)
 
       const status = response.status;
 

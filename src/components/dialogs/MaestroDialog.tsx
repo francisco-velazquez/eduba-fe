@@ -30,12 +30,14 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [isActive, setIsActive] = useState("activo");
+  const [phone, setPhone] = useState("");
 
-  const createTeacher = useCreateTeacher();
+
+    const createTeacher = useCreateTeacher();
   const updateTeacher = useUpdateTeacher();
 
   const isEditing = !!maestro;
@@ -46,7 +48,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
       setFirstName(maestro.firstName);
       setLastName(maestro.lastName);
       setEmail(maestro.email);
-      setPhone(maestro.telefono);
+      setEmployeeNumber(maestro.telefono);
       // Convert date from ISO 8601 to YYYY-MM-DD format for input type="date"
       const fechaNacimiento = maestro.fechaNacimiento 
         ? new Date(maestro.fechaNacimiento).toISOString().split('T')[0]
@@ -58,7 +60,7 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
       setFirstName("");
       setLastName("");
       setEmail("");
-      setPhone("");
+      setEmployeeNumber("");
       setPassword("");
       setDateOfBirth("");
       setIsActive("activo");
@@ -74,7 +76,8 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
             firstName,
             lastName,
             email,
-            phone: phone || undefined,
+            number_phone: phone || undefined,
+            employeeNumber: employeeNumber || undefined,
             dateOfBirth: dateOfBirth || undefined,
             isActive: isActive === "activo",
           },
@@ -84,7 +87,8 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
           firstName,
           lastName,
           email,
-          phone: phone || undefined,
+          number_phone: phone || undefined,
+          employeeNumber: employeeNumber || undefined,
           dateOfBirth: dateOfBirth || undefined,
           password,
         });
@@ -139,14 +143,23 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="telefono">Teléfono</Label>
+            <Label htmlFor="employeeNumber">Número de Empleado</Label>
             <Input
-              id="telefono"
-              placeholder="555-1234"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              id="employeeNumber"
+              placeholder="Número de empleado"
+              value={employeeNumber}
+              onChange={(e) => setEmployeeNumber(e.target.value)}
             />
           </div>
+        <div className="space-y-2">
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+                id="phone"
+                placeholder="Número de teléfono"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+            />
+        </div>
           <div className="space-y-2">
             <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
             <Input
@@ -156,18 +169,18 @@ export function MaestroDialog({ open, onOpenChange, maestro }: MaestroDialogProp
               onChange={(e) => setDateOfBirth(e.target.value)}
             />
           </div>
-          {!isEditing && (
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              {isEditing ? "Nueva Contraseña (opcional)" : "Contraseña"}
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder={isEditing ? "Dejar vacío para mantener la actual" : "••••••••"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
           {isEditing && (
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>

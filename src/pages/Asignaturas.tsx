@@ -136,9 +136,9 @@ export default function Asignaturas() {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Eliminar Asignatura"
-        description={`¿Estás seguro de eliminar "${asignaturaToDelete?.nombre}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
+        title="Baja de Asignatura"
+        description={`¿Estás seguro de dar de baja la asignatura "${asignaturaToDelete?.nombre}"?`}
+        confirmText="Sí"
         variant="danger"
         isLoading={deleteSubject.isPending}
         onConfirm={confirmDelete}

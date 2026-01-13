@@ -197,7 +197,7 @@ export function AlumnoDialog({ open, onOpenChange, alumno }: AlumnoDialogProps) 
               <SelectContent>
                 {grados.map((grado) => (
                   <SelectItem key={grado.id} value={String(grado.id)}>
-                    {grado.nombre}
+                    {grado.name}
                   </SelectItem>
                 ))}
               </SelectContent>

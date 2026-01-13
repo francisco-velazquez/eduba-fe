@@ -10,7 +10,8 @@ export interface ApiGrade {
   id: string;
   name: string;
   level: string;
-  description?: string;
+  code?: string;
+  isActive?: boolean;
   studentsCount?: number;
   subjectsCount?: number;
   createdAt?: string;
@@ -20,24 +21,27 @@ export interface ApiGrade {
 export interface CreateGradeDto {
   name: string;
   level: string;
-  description?: string;
+  code?: string;
 }
 
 export interface UpdateGradeDto {
   name?: string;
   level?: string;
-  description?: string;
+  code?: string;
 }
 
 // Map API grade to app format
 export function mapApiGrade(apiGrade: ApiGrade) {
   return {
     id: apiGrade.id,
-    nombre: apiGrade.name,
-    nivel: apiGrade.level,
-    descripcion: apiGrade.description,
-    alumnos: apiGrade.studentsCount ?? 0,
-    asignaturas: apiGrade.subjectsCount ?? 0,
+    name: apiGrade.name,
+    level: apiGrade.level,
+    code: apiGrade.code,
+    isActive: apiGrade.isActive,
+    studentsCount: apiGrade.studentsCount || 0,
+    subjectsCount: apiGrade.subjectsCount || 0,
+    createdAt: apiGrade.createdAt,
+    updatedAt: apiGrade.updatedAt,
   };
 }
 

@@ -20,13 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateGrade, useUpdateGrade, useGrade } from "@/hooks/useGrades";
 import type { AppGrade } from "@/services/api/grades.api";
-
-const NIVELES_EDUCATIVOS = [
-  { value: "Preescolar", label: "Preescolar" },
-  { value: "Primaria", label: "Primaria" },
-  { value: "Secundaria", label: "Secundaria" },
-  { value: "Preparatoria", label: "Preparatoria" },
-];
+import {Switch} from "@/components/ui/switch.tsx";
 
 interface GradoDialogProps {
   open: boolean;
@@ -35,9 +29,10 @@ interface GradoDialogProps {
 }
 
 export function GradoDialog({ open, onOpenChange, grado }: GradoDialogProps) {
-  const [nombre, setNombre] = useState("");
-  const [nivel, setNivel] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+  const [name, setName] = useState("");
+  const [level, setLevel] = useState("");
+  const [code, setCode] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
   const createGrade = useCreateGrade();
   const updateGrade = useUpdateGrade();
@@ -57,28 +52,32 @@ export function GradoDialog({ open, onOpenChange, grado }: GradoDialogProps) {
     if (open) {
       if (gradeData) {
         // Populate form with grade data
-        setNombre(gradeData.nombre);
-        setNivel(gradeData.nivel ?? "");
-        setDescripcion(gradeData.descripcion ?? "");
+        setName(gradeData.name);
+        setLevel(gradeData.level ?? "");
+        setCode(gradeData.code ?? "");
+        setIsActive(gradeData.isActive ?? true);
       } else if (!isEditing) {
         // Reset form when opening for creation
-        setNombre("");
-        setNivel("");
-        setDescripcion("");
+        setName("");
+        setLevel("");
+        setCode("");
+        setIsActive(true);
       }
     } else {
       // Reset form when closing
-      setNombre("");
-      setNivel("");
-      setDescripcion("");
+      setName("");
+      setLevel("");
+      setCode("");
+      setIsActive(true);
     }
   }, [open, gradeData, isEditing]);
 
   const handleSubmit = async () => {
     const data = {
-      name: nombre,
-      level: nivel,
-      description: descripcion || undefined,
+      name,
+      level,
+      code,
+      isActive,
     };
 
     try {
@@ -113,41 +112,51 @@ export function GradoDialog({ open, onOpenChange, grado }: GradoDialogProps) {
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="nombre">Nombre del Grado</Label>
+                <Label htmlFor="name">Nombre del Grado</Label>
                 <Input
-                  id="nombre"
+                  id="name"
                   placeholder="Ej: 4° Primaria"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   disabled={isLoadingGrade}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nivel">Nivel Educativo</Label>
-                <Select value={nivel} onValueChange={setNivel} disabled={isLoadingGrade}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar nivel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {NIVELES_EDUCATIVOS.map((n) => (
-                      <SelectItem key={n.value} value={n.value}>
-                        {n.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="level">Nivel Educativo</Label>
+                  <Input
+                      id="level"
+                      placeholder="Ej: 4° Primaria"
+                      value={level}
+                      onChange={(e) => setLevel(e.target.value)}
+                      disabled={isLoadingGrade}
+                  />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descripcion">Descripción (Opcional)</Label>
-                <Textarea
-                  id="descripcion"
+                <Label htmlFor="code">Código de Grado</Label>
+                <Input
+                  id="code"
                   placeholder="Breve descripción del grado"
-                  rows={3}
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
                   disabled={isLoadingGrade}
                 />
               </div>
+                <div className="flex items-center justify-between space-x-2 rounded-lg border border-border p-4">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="isActive" className="text-base">
+                            Estado
+                        </Label>
+                        <div className="text-sm text-muted-foreground">
+                            {isActive ? "La asignatura está activa" : "La asignatura está inactiva"}
+                        </div>
+                    </div>
+                    <Switch
+                        id="isActive"
+                        checked={isActive}
+                        onCheckedChange={setIsActive}
+                        disabled={isLoadingGrade}
+                    />
+                </div>
             </>
           )}
         </div>
@@ -158,7 +167,7 @@ export function GradoDialog({ open, onOpenChange, grado }: GradoDialogProps) {
           <Button
             className="gradient-primary border-0"
             onClick={handleSubmit}
-            disabled={!nombre || !nivel || isLoading}
+            disabled={!name || !level || isLoading}
           >
             {isLoading ? "Guardando..." : isEditing ? "Actualizar Grado" : "Guardar Grado"}
           </Button>

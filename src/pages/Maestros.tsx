@@ -305,9 +305,9 @@ export default function Maestros() {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Eliminar Maestro"
-        description={`¿Estás seguro de eliminar a "${maestroToDelete?.nombre}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
+        title="Baja de Maestro"
+        description={`¿Estás seguro de dar de baja al maestro "${maestroToDelete?.nombre}"?`}
+        confirmText="Sí"
         variant="danger"
         isLoading={deleteTeacher.isPending}
         onConfirm={confirmDelete}

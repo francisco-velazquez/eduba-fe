@@ -109,8 +109,8 @@ export function useDeleteGrade() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GRADES_KEY });
       toast({
-        title: "Grado eliminado",
-        description: "El grado se ha eliminado exitosamente.",
+        title: "Baja de grado",
+        description: "El grado se ha dado de baja exitosamente.",
       });
     },
     onError: (error: Error) => {

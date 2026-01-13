@@ -70,7 +70,7 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
         } else if (subjectData.grados && subjectData.grados.length > 0) {
           // Fallback: find grade ID by name
           const matchingGrade = grados.find(g => 
-            subjectData.grados.includes(g.nombre)
+            subjectData.grados.includes(g.name)
           );
           setGradoId(matchingGrade?.id ?? "");
         } else {
@@ -164,7 +164,7 @@ export function AsignaturaDialog({ open, onOpenChange, asignatura }: AsignaturaD
               <SelectContent>
                 {grados.map((grado) => (
                   <SelectItem key={grado.id} value={String(grado.id)}>
-                    {grado.nombre}
+                    {grado.name}
                   </SelectItem>
                 ))}
               </SelectContent>

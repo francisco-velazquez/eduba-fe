@@ -108,8 +108,8 @@ export function useDeleteTeacher() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast({
-        title: "Maestro eliminado",
-        description: "El maestro se ha eliminado correctamente",
+        title: "Baja de Maestro",
+        description: "El maestro se ha dado de baja exitosamente.",
       });
     },
     onError: (error: Error) => {

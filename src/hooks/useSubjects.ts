@@ -109,8 +109,8 @@ export function useDeleteSubject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUBJECTS_KEY });
       toast({
-        title: "Asignatura eliminada",
-        description: "La asignatura se ha eliminado exitosamente.",
+        title: "Baja de asignatura",
+        description: "La asignatura se ha dado de baja exitosamente.",
       });
     },
     onError: (error: Error) => {

@@ -11,12 +11,12 @@ import { ApiSubject, mapApiSubject } from "./subjects.api";
 
 // DTO for assigning subjects to a teacher
 export interface AssignSubjectsDto {
-  subjectIds: string[];
+  subjectIds: number[];
 }
 
 // DTO for updating a student's grade
 export interface UpdateStudentGradeDto {
-  gradeId: string | number;
+  newGradeId: number;
 }
 
 // Response types for grade subjects

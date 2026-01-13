@@ -44,10 +44,12 @@ export default function Asignaciones() {
   // Handle assigning subjects to teacher
   const handleAssignToTeacher = () => {
     if (!selectedMaestroId || selectedSubjectIds.length === 0) return;
+
+    const subjectsIdNumbers = selectedSubjectIds.map((m) => Number(m));
     
     assignSubjectsToTeacher.mutate({
       teacherId: selectedMaestroId,
-      data: { subjectIds: selectedSubjectIds },
+      data: { subjectIds: subjectsIdNumbers },
     }, {
       onSuccess: () => {
         setSelectedSubjectIds([]);
@@ -61,7 +63,7 @@ export default function Asignaciones() {
     
     updateStudentGrade.mutate({
       studentId: selectedAlumnoId,
-      data: { gradeId: selectedGradoAlumnoId },
+      data: { newGradeId: Number(selectedGradoAlumnoId) },
     }, {
       onSuccess: () => {
         setSelectedAlumnoId("");

@@ -22,10 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user;
 
   // Initialize auth state on mount
-  useEffect(() => {
+  useEffect(() => {   
     const initializeAuth = async () => {
       try {
-        const { user, role } = await authService.getSession();
+        const { user, role } = authService.getSession();
         setUser(user);
         setRole(role);
       } catch (error) {

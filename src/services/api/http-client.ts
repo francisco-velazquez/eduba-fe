@@ -18,10 +18,12 @@ interface ApiResponse<T> {
 class HttpClient {
   private baseUrl: string;
   private token: string | null = null;
+  private user: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.loadToken();
+    this.loadUser();
   }
 
   /**
@@ -30,6 +32,15 @@ class HttpClient {
   private loadToken(): void {
     if (typeof window !== "undefined") {
       this.token = localStorage.getItem("auth_token");
+    }
+  }
+
+  /**
+   * Load user from localStorage
+   */
+  private loadUser(): void {
+    if (typeof window !== "undefined") {
+      this.user = localStorage.getItem("auth_user");
     }
   }
 
@@ -48,6 +59,20 @@ class HttpClient {
   }
 
   /**
+   * Set user
+   */
+  setUser(user: string | null): void {
+    this.user = user;
+    if (typeof window !== "undefined") {
+      if (user) {
+        localStorage.setItem("auth_user", user);
+      } else {
+        localStorage.removeItem("auth_user");
+      }
+    }
+  }
+
+  /**
    * Get current token
    */
   getToken(): string | null {
@@ -55,10 +80,17 @@ class HttpClient {
   }
 
   /**
+   * Get current user
+   */
+  getUser(): string | null {
+    return this.user;
+  }
+
+  /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.token && !!this.user;
   }
 
   /**

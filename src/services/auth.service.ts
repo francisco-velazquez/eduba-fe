@@ -23,6 +23,7 @@ const mapApiUserToAuthUser = (apiUser: ApiUser): AuthUser => ({
   id: apiUser.id,
   email: apiUser.email,
   fullName: apiUser.name,
+  role: mapApiRoleToAppRole(apiUser.role),
 });
 
 /**
@@ -126,7 +127,7 @@ export const authService = {
   /**
    * Get current session/user
    */
-  async getSession(): Promise<{ user: AuthUser | null; role: AppRole | null; error: string | null }> {
+  getSession(): { user: AuthUser | null; role: AppRole | null; error: string | null } {
     try {
       // Check if we have a token
       if (!authApi.isAuthenticated()) {
@@ -134,26 +135,21 @@ export const authService = {
       }
 
       // Fetch current user profile
-      const response = await authApi.getCurrentUser();
+      const response: ApiUser | null= authApi.getCurrentUser();
 
-      if (response.error) {
-        // Token might be invalid
-        if (response.status === 401) {
-          authApi.logout();
-          return { user: null, role: null, error: null };
-        }
-        return { user: null, role: null, error: response.error };
+      if (!response) {
+        authApi.logout();
+        return { user: null, role: null, error: 'Sesión expirada. Por favor, inicia sesión nuevamente.' };
       }
 
-      if (response.data) {
-        const user = mapApiUserToAuthUser(response.data);
-        const role = mapApiRoleToAppRole(response.data.role);
+      if (response) {
+        const user = mapApiUserToAuthUser(response);
+        const role = mapApiRoleToAppRole(response.role);
         return { user, role, error: null };
       }
 
       return { user: null, role: null, error: null };
     } catch (error) {
-      console.error("Get session error:", error);
       return { user: null, role: null, error: "Error al obtener sesión" };
     }
   },

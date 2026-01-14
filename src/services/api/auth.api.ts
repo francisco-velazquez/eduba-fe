@@ -60,6 +60,7 @@ export const authApi = {
     
     if (response.data?.accessToken) {
       httpClient.setToken(response.data.accessToken);
+      httpClient.setUser(JSON.stringify(response.data.user));
     }
     
     return response;
@@ -83,13 +84,14 @@ export const authApi = {
    */
   logout(): void {
     httpClient.setToken(null);
+    httpClient.setUser(null);
   },
 
   /**
    * Get current user profile
    */
-  async getCurrentUser() {
-    return httpClient.get<ApiUser>("/auth/profile");
+  getCurrentUser(): ApiUser | null{
+    return JSON.parse(httpClient.getUser());
   },
 
   /**

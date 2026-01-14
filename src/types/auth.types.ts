@@ -5,6 +5,7 @@ export interface AuthUser {
   id: string;
   email: string | undefined;
   fullName?: string;
+  role: string;
 }
 
 export interface AuthState {

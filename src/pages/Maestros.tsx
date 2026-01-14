@@ -193,8 +193,8 @@ export default function Maestros() {
                 {maestro.asignaturas.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">
                     {maestro.asignaturas.map((asig) => (
-                      <Badge key={asig} variant="secondary" className="text-xs">
-                        {asig}
+                      <Badge key={asig.id} variant="secondary" className="text-xs">
+                        {asig.nombre}
                       </Badge>
                     ))}
                   </div>
@@ -244,8 +244,8 @@ export default function Maestros() {
                         <div className="flex flex-wrap gap-1">
                           {maestro.asignaturas.length > 0 ? (
                             maestro.asignaturas.map((asig) => (
-                              <Badge key={asig} variant="secondary" className="text-xs">
-                                {asig}
+                              <Badge key={asig.id} variant="secondary" className="text-xs">
+                                {asig.nombre}
                               </Badge>
                             ))
                           ) : (

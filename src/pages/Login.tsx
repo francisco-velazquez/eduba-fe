@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, ArrowRight, Mail, Lock, User } from "lucide-react";
+import { ArrowRight, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth, useAuthRedirect } from "@/hooks";
 import { LoadingSpinner } from "@/components/common";
 import { APP_CONFIG, TOAST_MESSAGES } from "@/config";
+import edubbaLogo from "@/assets/edubba-logo.png";
 
 export default function Login() {
   const { toast } = useToast();
@@ -72,10 +73,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-6 md:mb-8">
-          <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-primary mb-3 md:mb-4">
-            <GraduationCap className="h-7 w-7 md:h-8 md:w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{APP_CONFIG.name}</h1>
+          <img src={edubbaLogo} alt={APP_CONFIG.name} className="h-16 md:h-20 w-auto object-contain mb-3 md:mb-4" />
           <p className="text-sm md:text-base text-muted-foreground mt-1 text-center">
             {APP_CONFIG.description}
           </p>

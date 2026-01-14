@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks";
-import { LogOut, School } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { TEACHER_NAV_ITEMS, APP_CONFIG, ROLE_LABELS } from "@/config";
+import edubbaLogo from "@/assets/edubba-logo.png";
 
 interface TeacherSidebarProps {
   onNavigate?: () => void;
@@ -28,11 +29,8 @@ export function TeacherSidebar({ onNavigate }: TeacherSidebarProps) {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-            <School className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={edubbaLogo} alt={APP_CONFIG.name} className="h-10 w-auto object-contain" />
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">{APP_CONFIG.name}</h1>
             <p className="text-xs text-sidebar-foreground/60">Panel {ROLE_LABELS.maestro}</p>
           </div>
         </div>

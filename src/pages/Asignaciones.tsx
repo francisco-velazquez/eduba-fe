@@ -317,8 +317,8 @@ export default function Asignaciones() {
                 <div className="flex flex-wrap gap-2">
                   {teacher.asignaturas && teacher.asignaturas.length > 0 ? (
                     teacher.asignaturas.map((asig) => (
-                      <Badge key={asig} variant="outline">
-                        {asig}
+                      <Badge key={asig.id} variant="outline">
+                        {asig.nombre}
                       </Badge>
                     ))
                   ) : (

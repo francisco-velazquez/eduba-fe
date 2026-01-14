@@ -4,6 +4,7 @@
  */
 
 import { httpClient } from "./http-client";
+import { ApiModule, mapApiModule } from "./modules.api";
 
 // API Types
 export interface ApiGrade {
@@ -27,6 +28,7 @@ export interface ApiSubject {
   teacherId?: string;
   teacherName?: string;
   color?: string;
+  modules?: ApiModule[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -101,6 +103,7 @@ export function mapApiSubject(apiSubject: ApiSubject, index: number = 0) {
     maestroId: apiSubject.teacherId,
     color: apiSubject.color ?? defaultColors[index % defaultColors.length],
     isActive: apiSubject.isActive ?? true, // Default to active if not specified
+    modules: apiSubject.modules?.map(mapApiModule) ?? [],
   };
 }
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   BookOpen,
   FolderOpen,
@@ -15,69 +16,34 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PageHeader } from "@/components/common";
-
-const subjects = [
-  { id: "1", name: "Matemáticas - 3° Secundaria" },
-  { id: "2", name: "Álgebra - 2° Secundaria" },
-  { id: "3", name: "Geometría - 1° Secundaria" },
-];
-
-const contentStructure = [
-  {
-    id: 1,
-    name: "Módulo 1: Ecuaciones Lineales",
-    chapters: [
-      {
-        id: 1,
-        name: "Introducción a las ecuaciones",
-        resources: [
-          { type: "video", name: "Video explicativo", duration: "15:30" },
-          { type: "pdf", name: "Guía de estudio", size: "2.4 MB" },
-        ],
-      },
-      {
-        id: 2,
-        name: "Resolución de ecuaciones simples",
-        resources: [
-          { type: "video", name: "Ejemplos prácticos", duration: "22:15" },
-          { type: "ppt", name: "Presentación", size: "5.1 MB" },
-          { type: "pdf", name: "Ejercicios", size: "1.2 MB" },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Módulo 2: Sistemas de Ecuaciones",
-    chapters: [
-      {
-        id: 3,
-        name: "Métodos de sustitución",
-        resources: [
-          { type: "video", name: "Método de sustitución", duration: "18:45" },
-        ],
-      },
-    ],
-  },
-];
+import { Switch } from "@/components/ui/switch";
+import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
+import { useSubject } from "@/hooks/useSubjects";
+import { useCreateModule, useUpdateModule } from "@/hooks/useModules";
+import { useCreateChapter } from "@/hooks/useChapters";
+import { ModuleDialog, ModuleFormValues } from "@/components/dialogs/ModuleDialog";
+import { uploadChapterFile } from "@/services/api/chapters.api";
+import { ChapterDialog, ChapterFormValues } from "@/components/dialogs/ChapterDialog";
+import { AppChapter } from "@/services/api/modules.api";
 
 export default function TeacherContent() {
-  const [selectedSubject, setSelectedSubject] = useState("1");
-  const [expandedModules, setExpandedModules] = useState<number[]>([1]);
-  const [expandedChapters, setExpandedChapters] = useState<number[]>([1]);
+  const { id_asignatura } = useParams<{ id_asignatura: string }>();
+  const { data: subject, isLoading, isError } = useSubject(id_asignatura ?? "");
+  const createModule = useCreateModule();
+  const updateModule = useUpdateModule();
+  const createChapter = useCreateChapter();
+
+  const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
+  const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [expandedModules, setExpandedModules] = useState<number[]>([]);
+  const [expandedChapters, setExpandedChapters] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleModule = (id: number) => {
     setExpandedModules((prev) =>
@@ -89,6 +55,67 @@ export default function TeacherContent() {
     setExpandedChapters((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
+  };
+
+  const handleCreateModule = (values: ModuleFormValues) => {
+    if (!id_asignatura || !subject) return;
+
+    const orderIndex = (subject.modules?.length ?? 0) + 1;
+
+    createModule.mutate(
+      {
+        title: values.title,
+        description: values.description,
+        isPublished: values.isPublished,
+        subjectId: parseInt(id_asignatura, 10),
+        orderIndex,
+      },
+      {
+        onSuccess: () => {
+          setIsModuleDialogOpen(false);
+        },
+      }
+    );
+  };
+
+  const handlePublishToggle = (moduleId: number, isPublished: boolean) => {
+    updateModule.mutate({ id: moduleId, data: { isPublished } });
+  };
+
+  const handleOpenChapterDialog = (moduleId: number) => {
+    setSelectedModuleId(moduleId);
+    setIsChapterDialogOpen(true);
+  };
+
+  const handleCreateChapter = async (values: ChapterFormValues) => {
+    if (!selectedModuleId || !subject) return;
+
+    setIsSubmitting(true);
+    const module = subject.modules.find((m) => m.id === selectedModuleId);
+    const orderIndex = (module?.chapters?.length ?? 0) + 1;
+
+    try {
+      const newChapter = await createChapter.mutateAsync({
+        title: values.title,
+        moduleId: selectedModuleId,
+        orderIndex,
+        isPublished: values.isPublished,
+      });
+
+      if (values.videoFile) {
+        await uploadChapterFile(newChapter.data.id, values.videoFile, "video");
+      }
+
+      if (values.contentFile) {
+        await uploadChapterFile(newChapter.data.id, values.contentFile, "content");
+      }
+
+      setIsChapterDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating chapter:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getResourceIcon = (type: string) => {
@@ -104,175 +131,201 @@ export default function TeacherContent() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Gestión de Contenido"
-        description="Organiza módulos, capítulos y recursos de tus asignaturas"
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Upload className="h-4 w-4 mr-2" />
-              Subir Recurso
-            </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Módulo
-            </Button>
-          </div>
-        }
+  if (isLoading) {
+    return <LoadingSpinner text="Cargando contenido..." />;
+  }
+
+  if (isError || !subject) {
+    return (
+      <EmptyState
+        title="Error"
+        description="No se pudo cargar el contenido de la asignatura. Por favor, intenta de nuevo más tarde."
+        icon={BookOpen}
       />
+    );
+  }
 
-      {/* Subject Selector */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-foreground">Asignatura:</span>
-          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-            <SelectTrigger className="w-72">
-              <SelectValue placeholder="Seleccionar asignatura" />
-            </SelectTrigger>
-            <SelectContent>
-              {subjects.map((subject) => (
-                <SelectItem key={subject.id} value={subject.id}>
-                  {subject.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Content Structure */}
-      <div className="bg-card rounded-xl border border-border shadow-card">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Estructura del Curso</h3>
-        </div>
-
-        <div className="divide-y divide-border">
-          {contentStructure.map((module) => (
-            <div key={module.id}>
-              {/* Module Header */}
-              <div
-                className="flex items-center justify-between p-4 hover:bg-muted/30 cursor-pointer"
-                onClick={() => toggleModule(module.id)}
+  return (
+    <>
+      <ModuleDialog
+        open={isModuleDialogOpen}
+        onOpenChange={setIsModuleDialogOpen}
+        onSubmit={handleCreateModule}
+        isSubmitting={createModule.isPending}
+        isPublished={true} // Default to published for new modules
+      />
+      <ChapterDialog
+        open={isChapterDialogOpen}
+        onOpenChange={setIsChapterDialogOpen}
+        onSubmit={handleCreateChapter}
+        isSubmitting={isSubmitting}
+      />
+      <div className="space-y-6">
+        <PageHeader
+          title="Gestión de Contenido"
+          description="Organiza módulos, capítulos y recursos de tus asignaturas"
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Subir Recurso
+              </Button>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setIsModuleDialogOpen(true)}
               >
-                <div className="flex items-center gap-3">
-                  {expandedModules.includes(module.id) ? (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <FolderOpen className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <span className="font-medium text-foreground">{module.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({module.chapters.length} capítulos)
-                  </span>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agregar Capítulo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar Módulo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Módulo
+              </Button>
+            </div>
+          }
+        />
 
-              {/* Chapters */}
-              {expandedModules.includes(module.id) && (
-                <div className="bg-muted/20">
-                  {module.chapters.map((chapter) => (
-                    <div key={chapter.id}>
-                      {/* Chapter Header */}
-                      <div
-                        className="flex items-center justify-between px-4 py-3 pl-12 hover:bg-muted/30 cursor-pointer"
-                        onClick={() => toggleChapter(chapter.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedChapters.includes(chapter.id) ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <div className="h-7 w-7 rounded bg-blue-500/20 flex items-center justify-center">
-                            <BookOpen className="h-3.5 w-3.5 text-blue-600" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            {chapter.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({chapter.resources.length} recursos)
-                          </span>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Upload className="h-4 w-4 mr-2" />
-                              Subir Recurso
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar Capítulo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+        {/* Subject Info */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-foreground">Asignatura:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground">{subject.nombre}</span>
+              <span className="text-sm text-muted-foreground">({subject.grados.join(", ")})</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Structure */}
+        <div className="bg-card rounded-xl border border-border shadow-card">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Estructura del Curso</h3>
+          </div>
+
+          {subject.modules && subject.modules.length > 0 ? (
+            <div className="divide-y divide-border">
+              {subject.modules.map((module) => (
+                <div key={module.id}>
+                  {/* Module Header */}
+                  <div
+                    className="flex items-center justify-between p-4 hover:bg-muted/30 cursor-pointer"
+                    onClick={() => toggleModule(module.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {expandedModules.includes(module.id) ? (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <FolderOpen className="h-4 w-4 text-emerald-600" />
                       </div>
+                      <span className="font-medium text-foreground">{module.nombre}</span>
+                      <Switch
+                        checked={module.isPublished}
+                        onCheckedChange={(checked) => handlePublishToggle(module.id, checked)}
+                        onClick={(e) => e.stopPropagation()} // Prevent module expansion when clicking switch
+                        aria-label="Toggle module publication status"
+                      />
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleOpenChapterDialog(module.id)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Agregar Capítulo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar Módulo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-                      {/* Resources */}
-                      {expandedChapters.includes(chapter.id) && (
-                        <div className="pl-20 pr-4 pb-3 space-y-2">
-                          {chapter.resources.map((resource, idx) => (
+                  {/* Chapters */}
+                  {expandedModules.includes(module.id) && (
+                    <div className="bg-muted/20 border-t border-border">
+                      {module.chapters && module.chapters.length > 0 ? (
+                        <div className="divide-y divide-border/50">
+                          {module.chapters.map((chapter: AppChapter) => (
                             <div
-                              key={idx}
-                              className="flex items-center justify-between p-3 bg-background rounded-lg border border-border"
+                              key={chapter.id}
+                              className="flex items-center justify-between p-3 pl-12 hover:bg-muted/40 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                {getResourceIcon(resource.type)}
-                                <span className="text-sm text-foreground">{resource.name}</span>
+                                <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-foreground">
+                                      {chapter.title}
+                                    </span>
+                                    {!chapter.isPublished && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                        Borrador
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {chapter.videoUrl && (
+                                      <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                                        <Video className="h-3 w-3" />
+                                        Video
+                                      </span>
+                                    )}
+                                    {chapter.contentUrl && (
+                                      <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                                        <FileText className="h-3 w-3" />
+                                        Material
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <span className="text-xs text-muted-foreground">
-                                {"duration" in resource ? resource.duration : resource.size}
-                              </span>
+                              
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Edit className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
-                          <Button variant="outline" size="sm" className="w-full mt-2">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Agregar Recurso
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            No hay capítulos en este módulo.
+                          </p>
+                          <Button 
+                            variant="link" 
+                            className="text-emerald-600 mt-1 h-auto p-0"
+                            onClick={() => handleOpenChapterDialog(module.id)}
+                          >
+                            Agregar el primer capítulo
                           </Button>
                         </div>
                       )}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">No hay módulos en esta asignatura.</p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

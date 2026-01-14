@@ -4,6 +4,7 @@
  */
 
 import { httpClient } from "./http-client";
+import { ApiSubject, mapApiSubject } from "./subjects.api";
 
 // API Types
 export interface ApiTeacher {
@@ -18,7 +19,7 @@ export interface ApiTeacher {
     email: string;
     number_phone?: string;
   };
-  subjects: Array<{ id: string; name: string }>;
+  subjects: ApiSubject[];
   createdAt: string;
   updatedAt: string;
 }
@@ -56,7 +57,7 @@ export function mapApiTeacher(apiTeacher: ApiTeacher) {
     employeeNumber: apiTeacher.employeeNumber ?? "",
     fechaNacimiento: apiTeacher.user.dateOfBirth,
     especialidad: apiTeacher.specialty ?? "",
-    asignaturas: apiTeacher.subjects?.map(s => s.name) ?? [],
+    asignaturas: apiTeacher.subjects?.map(mapApiSubject) ?? [],
     estado: apiTeacher.user.isActive ? "activo" : "inactivo",
     fechaCreacion: apiTeacher.createdAt,
     fechaActualizacion: apiTeacher.updatedAt,

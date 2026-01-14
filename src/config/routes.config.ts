@@ -29,7 +29,6 @@ export const ADMIN_NAV_ITEMS: RouteConfig[] = [
 export const TEACHER_NAV_ITEMS: RouteConfig[] = [
   { path: "/maestro", title: "Dashboard", icon: LayoutDashboard, description: "Vista general" },
   { path: "/maestro/asignaturas", title: "Mis Asignaturas", icon: BookOpen, description: "Materias asignadas" },
-  { path: "/maestro/contenido", title: "Contenido", icon: Play, description: "Recursos y material" },
   { path: "/maestro/examenes", title: "Exámenes", icon: FileText, description: "Evaluaciones" },
 ];
 

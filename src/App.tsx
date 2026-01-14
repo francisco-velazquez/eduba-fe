@@ -49,6 +49,7 @@ const App = () => (
             {/* Teacher Routes */}
             <Route path="/maestro" element={<TeacherLayout><TeacherDashboard /></TeacherLayout>} />
             <Route path="/maestro/asignaturas" element={<TeacherLayout><TeacherSubjects /></TeacherLayout>} />
+            <Route path="/maestro/asignaturas/:id_asignatura/contenido" element={<TeacherLayout><TeacherContent /></TeacherLayout>} />
             <Route path="/maestro/contenido" element={<TeacherLayout><TeacherContent /></TeacherLayout>} />
             <Route path="/maestro/examenes" element={<TeacherLayout><TeacherExams /></TeacherLayout>} />
 

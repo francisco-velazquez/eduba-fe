@@ -26,3 +26,6 @@ export type { ApiStudent, CreateStudentDto, UpdateStudentDto, AppStudent } from 
 
 export { assignmentsApi } from "./assignments.api";
 export type { AssignSubjectsDto, UpdateStudentGradeDto, GradeSubjectResponse } from "./assignments.api";
+
+export { chaptersApi, mapApiChapter } from "./chapters.api";
+export type { ApiChapter, CreateChapterDto, UpdateChapterDto, AppChapter } from "./chapters.api";

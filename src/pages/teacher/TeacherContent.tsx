@@ -27,23 +27,31 @@ import { useSubject } from "@/hooks/useSubjects";
 import { useCreateModule, useUpdateModule } from "@/hooks/useModules";
 import { useCreateChapter } from "@/hooks/useChapters";
 import { ModuleDialog, ModuleFormValues } from "@/components/dialogs/ModuleDialog";
-import { uploadChapterFile } from "@/services/api/chapters.api";
+import { uploadChapterFile, chaptersApi } from "@/services/api/chapters.api";
 import { ChapterDialog, ChapterFormValues } from "@/components/dialogs/ChapterDialog";
-import { AppChapter } from "@/services/api/modules.api";
+import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
+import { AppChapter, AppModule, modulesApi } from "@/services/api/modules.api";
 
 export default function TeacherContent() {
   const { id_asignatura } = useParams<{ id_asignatura: string }>();
-  const { data: subject, isLoading, isError } = useSubject(id_asignatura ?? "");
+  const { data: subject, isLoading, isError, refetch } = useSubject(id_asignatura ?? "");
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
   const createChapter = useCreateChapter();
 
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteModuleDialogOpen, setIsDeleteModuleDialogOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [chapterToDelete, setChapterToDelete] = useState<number | null>(null);
+  const [moduleToDelete, setModuleToDelete] = useState<number | null>(null);
+  const [moduleToEdit, setModuleToEdit] = useState<AppModule | null>(null);
   const [expandedModules, setExpandedModules] = useState<number[]>([]);
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingModule, setIsDeletingModule] = useState(false);
 
   const toggleModule = (id: number) => {
     setExpandedModules((prev) =>
@@ -57,25 +65,47 @@ export default function TeacherContent() {
     );
   };
 
-  const handleCreateModule = (values: ModuleFormValues) => {
-    if (!id_asignatura || !subject) return;
-
-    const orderIndex = (subject.modules?.length ?? 0) + 1;
-
-    createModule.mutate(
-      {
-        title: values.title,
-        description: values.description,
-        isPublished: values.isPublished,
-        subjectId: parseInt(id_asignatura, 10),
-        orderIndex,
-      },
-      {
-        onSuccess: () => {
-          setIsModuleDialogOpen(false);
+  const handleSaveModule = (values: ModuleFormValues) => {
+    if (moduleToEdit) {
+      // Update existing module
+      updateModule.mutate(
+        {
+          id: moduleToEdit.id,
+          data: {
+            title: values.title,
+            description: values.description,
+            isPublished: values.isPublished,
+          },
         },
-      }
-    );
+        {
+          onSuccess: () => {
+            setIsModuleDialogOpen(false);
+            setModuleToEdit(null);
+            refetch();
+          },
+        }
+      );
+    } else {
+      // Create new module
+      if (!id_asignatura || !subject) return;
+      const orderIndex = (subject.modules?.length ?? 0) + 1;
+
+      createModule.mutate(
+        {
+          title: values.title,
+          description: values.description,
+          isPublished: values.isPublished,
+          subjectId: parseInt(id_asignatura, 10),
+          orderIndex,
+        },
+        {
+          onSuccess: () => {
+            setIsModuleDialogOpen(false);
+            refetch();
+          },
+        }
+      );
+    }
   };
 
   const handlePublishToggle = (moduleId: number, isPublished: boolean) => {
@@ -91,7 +121,7 @@ export default function TeacherContent() {
     if (!selectedModuleId || !subject) return;
 
     setIsSubmitting(true);
-    const module = subject.modules.find((m) => m.id === selectedModuleId);
+    const module = subject.modules?.find((m) => m.id === selectedModuleId);
     const orderIndex = (module?.chapters?.length ?? 0) + 1;
 
     try {
@@ -111,11 +141,57 @@ export default function TeacherContent() {
       }
 
       setIsChapterDialogOpen(false);
+      refetch();
     } catch (error) {
       console.error("Error creating chapter:", error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDeleteChapter = (chapterId: number) => {
+    setChapterToDelete(chapterId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteChapter = async () => {
+    if (!chapterToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await chaptersApi.delete(chapterToDelete);
+      refetch();
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteModule = (moduleId: number) => {
+    setModuleToDelete(moduleId);
+    setIsDeleteModuleDialogOpen(true);
+  };
+
+  const confirmDeleteModule = async () => {
+    if (!moduleToDelete) return;
+
+    setIsDeletingModule(true);
+    try {
+      await modulesApi.delete(moduleToDelete);
+      refetch();
+      setIsDeleteModuleDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting module:", error);
+    } finally {
+      setIsDeletingModule(false);
+    }
+  };
+
+  const handleEditModule = (module: AppModule) => {
+    setModuleToEdit(module);
+    setIsModuleDialogOpen(true);
   };
 
   const getResourceIcon = (type: string) => {
@@ -149,16 +225,44 @@ export default function TeacherContent() {
     <>
       <ModuleDialog
         open={isModuleDialogOpen}
-        onOpenChange={setIsModuleDialogOpen}
-        onSubmit={handleCreateModule}
-        isSubmitting={createModule.isPending}
-        isPublished={true} // Default to published for new modules
+        onOpenChange={(open) => {
+          setIsModuleDialogOpen(open);
+          if (!open) setModuleToEdit(null);
+        }}
+        onSubmit={handleSaveModule}
+        isSubmitting={createModule.isPending || updateModule.isPending}
+        initialValues={moduleToEdit ? {
+          title: moduleToEdit.nombre,
+          description: moduleToEdit.descripcion,
+          isPublished: moduleToEdit.isPublished
+        } : undefined}
+        mode={moduleToEdit ? "edit" : "create"}
       />
       <ChapterDialog
         open={isChapterDialogOpen}
         onOpenChange={setIsChapterDialogOpen}
         onSubmit={handleCreateChapter}
         isSubmitting={isSubmitting}
+      />
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Eliminar Capítulo"
+        description="¿Estás seguro de que deseas eliminar este capítulo? Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteChapter}
+        isLoading={isDeleting}
+        variant="destructive"
+        confirmText="Eliminar"
+      />
+      <ConfirmDialog
+        open={isDeleteModuleDialogOpen}
+        onOpenChange={setIsDeleteModuleDialogOpen}
+        title="Eliminar Módulo"
+        description="¿Estás seguro de que deseas eliminar este módulo? Se eliminarán todos los capítulos y recursos asociados. Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteModule}
+        isLoading={isDeletingModule}
+        variant="destructive"
+        confirmText="Eliminar"
       />
       <div className="space-y-6">
         <PageHeader
@@ -172,7 +276,10 @@ export default function TeacherContent() {
               </Button>
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => setIsModuleDialogOpen(true)}
+                onClick={() => {
+                  setModuleToEdit(null);
+                  setIsModuleDialogOpen(true);
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Módulo
@@ -200,7 +307,7 @@ export default function TeacherContent() {
 
           {subject.modules && subject.modules.length > 0 ? (
             <div className="divide-y divide-border">
-              {subject.modules.map((module) => (
+              {subject.modules?.map((module) => (
                 <div key={module.id}>
                   {/* Module Header */}
                   <div
@@ -235,11 +342,14 @@ export default function TeacherContent() {
                           <Plus className="h-4 w-4 mr-2" />
                           Agregar Capítulo
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditModule(module)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar Módulo
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteModule(module.id)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Eliminar
                         </DropdownMenuItem>
@@ -252,7 +362,7 @@ export default function TeacherContent() {
                     <div className="bg-muted/20 border-t border-border">
                       {module.chapters && module.chapters.length > 0 ? (
                         <div className="divide-y divide-border/50">
-                          {module.chapters.map((chapter: AppChapter) => (
+                          {module.chapters?.map((chapter: AppChapter) => (
                             <div
                               key={chapter.id}
                               className="flex items-center justify-between p-3 pl-12 hover:bg-muted/40 transition-colors"
@@ -293,7 +403,12 @@ export default function TeacherContent() {
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                   <Edit className="h-4 w-4 text-muted-foreground" />
                                 </Button>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteChapter(chapter.id)}
+                                  >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>

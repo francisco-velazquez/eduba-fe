@@ -57,23 +57,21 @@ export interface UpdateModuleDto {
 
 // Map API chapter to app format
 export function mapApiChapter(apiChapter: AppChapter) {
-  console.log('API Chapter:', apiChapter)
   return {
-    id: apiChapter.id,
-    title: apiChapter.title,
-    videoUrl: apiChapter.videoUrl,
-    contentUrl: apiChapter.contentUrl,
-    orderIndex: apiChapter.orderIndex,
-    isPublished: apiChapter.isPublished,
-    moduleId: apiChapter.moduleId,
-    createdAt: apiChapter.createdAt,
-    updatedAt: apiChapter.updatedAt,
+    id: apiChapter.id || '',
+    title: apiChapter.title || '',
+    videoUrl: apiChapter.videoUrl || '',
+    contentUrl: apiChapter.contentUrl || '',
+    orderIndex: apiChapter.orderIndex || 0,
+    isPublished: apiChapter.isPublished || false,
+    moduleId: apiChapter.moduleId || 0,
+    createdAt: apiChapter.createdAt || '',
+    updatedAt: apiChapter.updatedAt || '',
   };
 }
 
 // Map API module to app format
 export function mapApiModule(apiModule: ApiModule) {
-  console.log('API Module:', apiModule)
   return {
     id: apiModule.id,
     nombre: apiModule.title, // Map title to nombre
@@ -88,7 +86,7 @@ export function mapApiModule(apiModule: ApiModule) {
       fechaCreacion: apiModule.subject.createdAt,
       fechaActualizacion: apiModule.subject.updatedAt,
     } : null,
-    chapters: apiModule.chapters.map(mapApiChapter),
+    chapters: apiModule.chapters?.map(mapApiChapter),
     orderIndex: apiModule.orderIndex,
     isPublished: apiModule.isPublished,
     fechaCreacion: apiModule.createdAt,
@@ -120,4 +118,8 @@ export const modulesApi = {
       data: response.data ? mapApiModule(response.data) : null,
     };
   },
+
+  async delete(id: number) {
+    return httpClient.delete(`/modules/${id}`);
+  }
 };

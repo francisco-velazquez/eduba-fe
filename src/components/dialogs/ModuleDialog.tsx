@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +29,11 @@ interface ModuleDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: ModuleFormValues) => void;
   isSubmitting: boolean;
-  isPublished: boolean;
+  initialValues?: ModuleFormValues | null;
+  mode?: "create" | "edit";
 }
 
-export function ModuleDialog({ open, onOpenChange, onSubmit, isSubmitting }: ModuleDialogProps) {
+export function ModuleDialog({ open, onOpenChange, onSubmit, isSubmitting, initialValues, mode = "create" }: ModuleDialogProps) {
   const {
     register,
     handleSubmit,
@@ -40,22 +42,33 @@ export function ModuleDialog({ open, onOpenChange, onSubmit, isSubmitting }: Mod
   } = useForm<ModuleFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      title: "",
+      description: "",
       isPublished: true,
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      reset(initialValues || {
+        title: "",
+        description: "",
+        isPublished: true,
+      });
+    }
+  }, [open, initialValues, reset]);
+
   const handleFormSubmit: SubmitHandler<ModuleFormValues> = (values) => {
     onSubmit(values);
-    reset();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nuevo Módulo</DialogTitle>
+          <DialogTitle>{mode === "create" ? "Nuevo Módulo" : "Editar Módulo"}</DialogTitle>
           <DialogDescription>
-            Crea un nuevo módulo para organizar el contenido de tu asignatura.
+            {mode === "create" ? "Crea un nuevo módulo para organizar el contenido de tu asignatura." : "Modifica los detalles del módulo existente."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -80,7 +93,7 @@ export function ModuleDialog({ open, onOpenChange, onSubmit, isSubmitting }: Mod
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox id="isPublished" {...register("isPublished")} defaultChecked={true} />
-            <Label htmlFor="isPublished">Publicar módulo al crearlo</Label>
+            <Label htmlFor="isPublished">{mode === "create" ? "Publicar módulo al crearlo" : "Módulo publicado"}</Label>
           </div>
           <DialogFooter>
             <Button
@@ -92,7 +105,7 @@ export function ModuleDialog({ open, onOpenChange, onSubmit, isSubmitting }: Mod
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creando..." : "Crear Módulo"}
+              {isSubmitting ? "Guardando..." : (mode === "create" ? "Crear Módulo" : "Guardar Cambios")}
             </Button>
           </DialogFooter>
         </form>

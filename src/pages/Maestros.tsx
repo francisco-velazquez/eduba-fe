@@ -308,7 +308,7 @@ export default function Maestros() {
         title="Baja de Maestro"
         description={`¿Estás seguro de dar de baja al maestro "${maestroToDelete?.nombre}"?`}
         confirmText="Sí"
-        variant="danger"
+        variant="destructive"
         isLoading={deleteTeacher.isPending}
         onConfirm={confirmDelete}
       />

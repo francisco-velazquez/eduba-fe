@@ -139,7 +139,7 @@ export default function Asignaturas() {
         title="Baja de Asignatura"
         description={`¿Estás seguro de dar de baja la asignatura "${asignaturaToDelete?.nombre}"?`}
         confirmText="Sí"
-        variant="danger"
+        variant="destructive"
         isLoading={deleteSubject.isPending}
         onConfirm={confirmDelete}
       />

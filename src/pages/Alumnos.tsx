@@ -351,7 +351,7 @@ export default function Alumnos() {
         title="Baja de Alumno"
         description={`¿Estás seguro de dar de baja a "${alumnoToDelete?.nombre}"?`}
         confirmText="Sí"
-        variant="danger"
+        variant="destructive"
         isLoading={deleteStudent.isPending}
         onConfirm={confirmDelete}
       />

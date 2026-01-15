@@ -176,7 +176,7 @@ export default function Grados() {
         title="Baja de Grado"
         description={`¿Estás seguro de dar de baja el grado "${gradoToDelete?.name}"?`}
         confirmText="Sí"
-        variant="danger"
+        variant="destructive"
         isLoading={deleteGrade.isPending}
         onConfirm={confirmDelete}
       />

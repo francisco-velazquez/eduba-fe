@@ -12,3 +12,15 @@ export const useCreateChapter = () => {
     },
   });
 };
+
+export const useReorderChapters = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { moduleId: number; chapterIds: (number | string)[] }) =>
+      chaptersApi.reorder(data.moduleId, data.chapterIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subject"] });
+    },
+  });
+};

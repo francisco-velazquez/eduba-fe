@@ -13,6 +13,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  GripVertical,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,16 +23,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useSubject } from "@/hooks/useSubjects";
 import { useCreateModule, useUpdateModule } from "@/hooks/useModules";
-import { useCreateChapter } from "@/hooks/useChapters";
+import { useCreateChapter, useReorderChapters } from "@/hooks/useChapters";
 import { ModuleDialog, ModuleFormValues } from "@/components/dialogs/ModuleDialog";
 import { uploadChapterFile, chaptersApi } from "@/services/api/chapters.api";
 import { ChapterDialog, ChapterFormValues } from "@/components/dialogs/ChapterDialog";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { AppChapter, AppModule, modulesApi } from "@/services/api/modules.api";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 export default function TeacherContent() {
   const { id_asignatura } = useParams<{ id_asignatura: string }>();
@@ -38,11 +42,13 @@ export default function TeacherContent() {
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
   const createChapter = useCreateChapter();
+  const reorderChapters = useReorderChapters();
 
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteModuleDialogOpen, setIsDeleteModuleDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [chapterToDelete, setChapterToDelete] = useState<number | null>(null);
   const [moduleToDelete, setModuleToDelete] = useState<number | null>(null);
@@ -52,6 +58,16 @@ export default function TeacherContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeletingModule, setIsDeletingModule] = useState(false);
+
+  const filteredModules = subject?.modules?.filter((module) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const matchModule = module.nombre.toLowerCase().includes(query);
+    const matchChapter = module.chapters?.some((chapter) =>
+      chapter.title.toLowerCase().includes(query)
+    );
+    return matchModule || matchChapter;
+  }) || [];
 
   const toggleModule = (id: number) => {
     setExpandedModules((prev) =>
@@ -194,6 +210,26 @@ export default function TeacherContent() {
     setIsModuleDialogOpen(true);
   };
 
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    const moduleId = parseInt(result.source.droppableId);
+
+    if (sourceIndex === destinationIndex) return;
+
+    const module = subject?.modules?.find((m) => m.id === moduleId);
+    if (!module || !module.chapters) return;
+
+    const newChapters = Array.from(module.chapters);
+    const [reorderedChapter] = newChapters.splice(sourceIndex, 1);
+    newChapters.splice(destinationIndex, 0, reorderedChapter);
+
+    const chapterIds = newChapters.map((c) => c.id);
+    reorderChapters.mutate({ moduleId, chapterIds });
+  };
+
   const getResourceIcon = (type: string) => {
     switch (type) {
       case "video":
@@ -222,7 +258,7 @@ export default function TeacherContent() {
   }
 
   return (
-    <>
+    <DragDropContext onDragEnd={onDragEnd}>
       <ModuleDialog
         open={isModuleDialogOpen}
         onOpenChange={(open) => {
@@ -301,13 +337,25 @@ export default function TeacherContent() {
 
         {/* Content Structure */}
         <div className="bg-card rounded-xl border border-border shadow-card">
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="font-semibold text-foreground">Estructura del Curso</h3>
+            {subject?.modules && subject.modules.length > 0 && (
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar contenido..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            )}
           </div>
 
           {subject.modules && subject.modules.length > 0 ? (
             <div className="divide-y divide-border">
-              {subject.modules?.map((module) => (
+              {filteredModules.length > 0 ? (
+                filteredModules.map((module) => (
                 <div key={module.id}>
                   {/* Module Header */}
                   <div
@@ -324,6 +372,9 @@ export default function TeacherContent() {
                         <FolderOpen className="h-4 w-4 text-emerald-600" />
                       </div>
                       <span className="font-medium text-foreground">{module.nombre}</span>
+                      <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                        {module.chapters?.length || 0} capítulos
+                      </span>
                       <Switch
                         checked={module.isPublished}
                         onCheckedChange={(checked) => handlePublishToggle(module.id, checked)}
@@ -361,60 +412,77 @@ export default function TeacherContent() {
                   {expandedModules.includes(module.id) && (
                     <div className="bg-muted/20 border-t border-border">
                       {module.chapters && module.chapters.length > 0 ? (
-                        <div className="divide-y divide-border/50">
-                          {module.chapters?.map((chapter: AppChapter) => (
+                        <Droppable droppableId={String(module.id)}>
+                          {(provided) => (
                             <div
-                              key={chapter.id}
-                              className="flex items-center justify-between p-3 pl-12 hover:bg-muted/40 transition-colors"
+                              {...provided.droppableProps}
+                              ref={provided.innerRef}
+                              className="divide-y divide-border/50"
                             >
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center">
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-foreground">
-                                      {chapter.title}
-                                    </span>
-                                    {!chapter.isPublished && (
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                                        Borrador
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {chapter.videoUrl && (
-                                      <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
-                                        <Video className="h-3 w-3" />
-                                        Video
-                                      </span>
-                                    )}
-                                    {chapter.contentUrl && (
-                                      <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                                        <FileText className="h-3 w-3" />
-                                        Material
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Edit className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteChapter(chapter.id)}
-                                  >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                              {module.chapters?.map((chapter: AppChapter, index: number) => (
+                                <Draggable key={chapter.id} draggableId={String(chapter.id)} index={index}>
+                                  {(provided) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      className="flex items-center justify-between p-3 pl-4 hover:bg-muted/40 transition-colors bg-card"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div {...provided.dragHandleProps} className="cursor-grab text-muted-foreground hover:text-foreground">
+                                          <GripVertical className="h-4 w-4" />
+                                        </div>
+                                        <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center">
+                                          <FileText className="h-4 w-4 text-muted-foreground" />
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium text-foreground">
+                                              {chapter.title}
+                                            </span>
+                                            {!chapter.isPublished && (
+                                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                                Borrador
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            {chapter.videoUrl && (
+                                              <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                                                <Video className="h-3 w-3" />
+                                                Video
+                                              </span>
+                                            )}
+                                            {chapter.contentUrl && (
+                                              <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                                                <FileText className="h-3 w-3" />
+                                                Material
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <Edit className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                            onClick={() => handleDeleteChapter(chapter.id)}
+                                          >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
                             </div>
-                          ))}
-                        </div>
+                          )}
+                        </Droppable>
                       ) : (
                         <div className="p-8 text-center">
                           <p className="text-sm text-muted-foreground">
@@ -432,7 +500,12 @@ export default function TeacherContent() {
                     </div>
                   )}
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  No se encontraron resultados para "{searchQuery}"
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 text-center">
@@ -441,6 +514,6 @@ export default function TeacherContent() {
           )}
         </div>
       </div>
-    </>
+    </DragDropContext>
   );
 }

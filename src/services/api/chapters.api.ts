@@ -159,5 +159,13 @@ export const chaptersApi = {
       ...response,
       data: response.data?.map(mapApiChapter) ?? null,
     };
+  },
+
+  /**
+   * Reorder chapters within a module
+   */
+  async reorder(moduleId: number, chapterIds: (number | string)[]) {
+    const response = await httpClient.patch(`/modules/${moduleId}/reorder`, { chapterIds });
+    return response;
   }
 };

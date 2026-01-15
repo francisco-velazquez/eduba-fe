@@ -28,7 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useSubject } from "@/hooks/useSubjects";
 import { useCreateModule, useUpdateModule } from "@/hooks/useModules";
-import { useCreateChapter, useReorderChapters } from "@/hooks/useChapters";
+import { useCreateChapter, useReorderChapters, useUpdateChapter } from "@/hooks/useChapters";
 import { ModuleDialog, ModuleFormValues } from "@/components/dialogs/ModuleDialog";
 import { uploadChapterFile, chaptersApi } from "@/services/api/chapters.api";
 import { ChapterDialog, ChapterFormValues } from "@/components/dialogs/ChapterDialog";
@@ -42,6 +42,7 @@ export default function TeacherContent() {
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
   const createChapter = useCreateChapter();
+  const updateChapter = useUpdateChapter();
   const reorderChapters = useReorderChapters();
 
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
@@ -53,6 +54,7 @@ export default function TeacherContent() {
   const [chapterToDelete, setChapterToDelete] = useState<number | null>(null);
   const [moduleToDelete, setModuleToDelete] = useState<number | null>(null);
   const [moduleToEdit, setModuleToEdit] = useState<AppModule | null>(null);
+  const [chapterToEdit, setChapterToEdit] = useState<AppChapter | null>(null);
   const [expandedModules, setExpandedModules] = useState<number[]>([]);
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,37 +131,60 @@ export default function TeacherContent() {
   };
 
   const handleOpenChapterDialog = (moduleId: number) => {
+    setChapterToEdit(null);
     setSelectedModuleId(moduleId);
     setIsChapterDialogOpen(true);
   };
 
-  const handleCreateChapter = async (values: ChapterFormValues) => {
-    if (!selectedModuleId || !subject) return;
+  const handleSaveChapter = async (values: ChapterFormValues) => {
+    if (!subject) return;
 
     setIsSubmitting(true);
-    const module = subject.modules?.find((m) => m.id === selectedModuleId);
-    const orderIndex = (module?.chapters?.length ?? 0) + 1;
-
     try {
-      const newChapter = await createChapter.mutateAsync({
-        title: values.title,
-        moduleId: selectedModuleId,
-        orderIndex,
-        isPublished: values.isPublished,
-      });
+      if (chapterToEdit) {
+        // Edit existing chapter
+        await updateChapter.mutateAsync({
+          id: chapterToEdit.id,
+          data: {
+            title: values.title,
+            isPublished: values.isPublished,
+          },
+        });
 
-      if (values.videoFile) {
-        await uploadChapterFile(newChapter.data.id, values.videoFile, "video");
-      }
+        if (values.videoFile) {
+          await uploadChapterFile(chapterToEdit.id, values.videoFile, "video");
+        }
 
-      if (values.contentFile) {
-        await uploadChapterFile(newChapter.data.id, values.contentFile, "content");
+        if (values.contentFile) {
+          await uploadChapterFile(chapterToEdit.id, values.contentFile, "content");
+        }
+      } else {
+        // Create new chapter
+        if (!selectedModuleId) return;
+        const module = subject.modules?.find((m) => m.id === selectedModuleId);
+        const orderIndex = (module?.chapters?.length ?? 0) + 1;
+
+        const newChapter = await createChapter.mutateAsync({
+          title: values.title,
+          moduleId: selectedModuleId,
+          orderIndex,
+          isPublished: values.isPublished,
+        });
+
+        if (values.videoFile) {
+          await uploadChapterFile(newChapter.data.id, values.videoFile, "video");
+        }
+
+        if (values.contentFile) {
+          await uploadChapterFile(newChapter.data.id, values.contentFile, "content");
+        }
       }
 
       setIsChapterDialogOpen(false);
+      setChapterToEdit(null);
       refetch();
     } catch (error) {
-      console.error("Error creating chapter:", error);
+      console.error("Error saving chapter:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -208,6 +233,11 @@ export default function TeacherContent() {
   const handleEditModule = (module: AppModule) => {
     setModuleToEdit(module);
     setIsModuleDialogOpen(true);
+  };
+
+  const handleEditChapter = (chapter: AppChapter) => {
+    setChapterToEdit(chapter);
+    setIsChapterDialogOpen(true);
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -276,9 +306,19 @@ export default function TeacherContent() {
       />
       <ChapterDialog
         open={isChapterDialogOpen}
-        onOpenChange={setIsChapterDialogOpen}
-        onSubmit={handleCreateChapter}
+        onOpenChange={(open) => {
+          setIsChapterDialogOpen(open);
+          if (!open) setChapterToEdit(null);
+        }}
+        onSubmit={handleSaveChapter}
         isSubmitting={isSubmitting}
+        mode={chapterToEdit ? "edit" : "create"}
+        initialData={chapterToEdit ? {
+          title: chapterToEdit.title,
+          isPublished: chapterToEdit.isPublished,
+          videoUrl: chapterToEdit.videoUrl,
+          contentUrl: chapterToEdit.contentUrl
+        } : null}
       />
       <ConfirmDialog
         open={isDeleteDialogOpen}
@@ -463,7 +503,10 @@ export default function TeacherContent() {
                                       </div>
                                       
                                       <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Button 
+                                          variant="ghost" size="sm" className="h-8 w-8 p-0"
+                                          onClick={() => handleEditChapter(chapter)}
+                                        >
                                           <Edit className="h-4 w-4 text-muted-foreground" />
                                         </Button>
                                           <Button
@@ -491,7 +534,10 @@ export default function TeacherContent() {
                           <Button 
                             variant="link" 
                             className="text-emerald-600 mt-1 h-auto p-0"
-                            onClick={() => handleOpenChapterDialog(module.id)}
+                            onClick={() => {
+                              setChapterToEdit(null);
+                              handleOpenChapterDialog(module.id);
+                            }}
                           >
                             Agregar el primer capítulo
                           </Button>

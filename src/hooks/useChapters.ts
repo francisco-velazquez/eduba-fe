@@ -24,3 +24,15 @@ export const useReorderChapters = () => {
     },
   });
 };
+
+export const useUpdateChapter = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { id: number; data: Partial<CreateChapterData> }) =>
+      chaptersApi.update(data.id, data.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subject"] });
+    },
+  });
+};

@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, X } from "lucide-react";
+import { Upload, X, FileText, Video } from "lucide-react";
 import { useEffect } from "react";
 
 const formSchema = z.object({
@@ -31,6 +31,12 @@ interface ChapterDialogProps {
   onSubmit: (values: ChapterFormValues) => void;
   isSubmitting: boolean;
   mode?: "create" | "edit";
+  initialData?: {
+    title: string;
+    isPublished: boolean;
+    videoUrl?: string | null;
+    contentUrl?: string | null;
+  } | null;
 }
 
 export function ChapterDialog({ 
@@ -38,7 +44,8 @@ export function ChapterDialog({
   onOpenChange, 
   onSubmit, 
   isSubmitting,
-  mode = "create" 
+  mode = "create",
+  initialData
 }: ChapterDialogProps) {
   const {
     register,
@@ -60,10 +67,24 @@ export function ChapterDialog({
   const contentFile = watch("contentFile");
 
   useEffect(() => {
-    if (!open) {
-      reset();
+    if (open) {
+      if (mode === "edit" && initialData) {
+        reset({
+          title: initialData.title,
+          isPublished: initialData.isPublished,
+          videoFile: null,
+          contentFile: null,
+        });
+      } else {
+        reset({
+          title: "",
+          isPublished: true,
+          videoFile: null,
+          contentFile: null,
+        });
+      }
     }
-  }, [open, reset]);
+  }, [open, mode, initialData, reset]);
 
   const handleFormSubmit: SubmitHandler<ChapterFormValues> = (values) => {
     onSubmit(values);
@@ -125,6 +146,12 @@ export function ChapterDialog({
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+                ) : initialData?.videoUrl ? (
+                  <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                    <Video className="h-4 w-4" />
+                    <span>Video actual cargado</span>
+                    <span className="text-xs text-muted-foreground">(Sube uno nuevo para reemplazarlo)</span>
+                  </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">
                     <span className="font-semibold text-emerald-600">Haz clic para subir</span> o arrastra un video
@@ -161,6 +188,12 @@ export function ChapterDialog({
                     >
                       <X className="h-4 w-4" />
                     </Button>
+                  </div>
+                ) : initialData?.contentUrl ? (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <FileText className="h-4 w-4" />
+                    <span>Material actual cargado</span>
+                    <span className="text-xs text-muted-foreground">(Sube uno nuevo para reemplazarlo)</span>
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">

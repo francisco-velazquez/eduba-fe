@@ -14,7 +14,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Upload, X, FileText, Video } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
@@ -65,6 +65,19 @@ export function ChapterDialog({
 
   const videoFile = watch("videoFile");
   const contentFile = watch("contentFile");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (videoFile) {
+      const url = URL.createObjectURL(videoFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else if (initialData?.videoUrl) {
+      setPreviewUrl(initialData.videoUrl);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [videoFile, initialData]);
 
   useEffect(() => {
     if (open) {
@@ -121,45 +134,63 @@ export function ChapterDialog({
 
           <div className="space-y-2">
             <Label>Video del capítulo (Opcional)</Label>
-            <div className="border-2 border-dashed border-border rounded-lg p-4 hover:bg-muted/50 transition-colors relative text-center">
-              <input 
-                type="file" 
-                accept="video/*"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                onChange={(e) => handleFileChange(e, "videoFile")}
-              />
-              <div className="flex flex-col items-center gap-2">
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                {videoFile ? (
-                  <div className="flex items-center gap-2 z-20">
-                    <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{videoFile.name}</span>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setValue("videoFile", null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : initialData?.videoUrl ? (
-                  <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                    <Video className="h-4 w-4" />
-                    <span>Video actual cargado</span>
-                    <span className="text-xs text-muted-foreground">(Sube uno nuevo para reemplazarlo)</span>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-emerald-600">Haz clic para subir</span> o arrastra un video
-                    <p className="text-xs mt-1">MP4, WebM</p>
-                  </div>
+            {previewUrl ? (
+              <div className="relative rounded-lg border border-border overflow-hidden bg-black/5">
+                <video 
+                  src={previewUrl} 
+                  controls 
+                  className="w-full max-h-[300px] aspect-video object-contain bg-black" 
+                />
+                <div className="absolute top-2 right-2 flex gap-2">
+                   <div className="relative">
+                      <input 
+                        type="file" 
+                        accept="video/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                        onChange={(e) => handleFileChange(e, "videoFile")}
+                      />
+                      <Button type="button" variant="secondary" size="sm" className="h-8 shadow-sm">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Reemplazar
+                      </Button>
+                   </div>
+                   {videoFile && (
+                     <Button 
+                       type="button" 
+                       variant="destructive" 
+                       size="icon" 
+                       className="h-8 w-8 shadow-sm"
+                       onClick={() => setValue("videoFile", null)}
+                     >
+                       <X className="h-4 w-4" />
+                     </Button>
+                   )}
+                </div>
+                {videoFile && (
+                    <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white px-3 py-1.5 rounded text-xs truncate backdrop-blur-sm">
+                        Archivo seleccionado: {videoFile.name}
+                    </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <div className="border-2 border-dashed border-border rounded-lg p-8 hover:bg-muted/50 transition-colors relative text-center group">
+                <input 
+                  type="file" 
+                  accept="video/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  onChange={(e) => handleFileChange(e, "videoFile")}
+                />
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                    <Video className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-emerald-600">Haz clic para subir</span> o arrastra un video
+                    <p className="text-xs mt-1 text-muted-foreground/70">MP4, WebM</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

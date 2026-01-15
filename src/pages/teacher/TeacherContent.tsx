@@ -148,10 +148,11 @@ export default function TeacherContent() {
           data: {
             title: values.title,
             isPublished: values.isPublished,
+            videoUrl: values.videoUrl || null,
           },
         });
 
-        if (values.videoFile) {
+        if (!values.videoUrl && values.videoFile) {
           await uploadChapterFile(chapterToEdit.id, values.videoFile, "video");
         }
 
@@ -169,9 +170,10 @@ export default function TeacherContent() {
           moduleId: selectedModuleId,
           orderIndex,
           isPublished: values.isPublished,
+          videoUrl: values.videoUrl,
         });
 
-        if (values.videoFile) {
+        if (!values.videoUrl && values.videoFile) {
           await uploadChapterFile(newChapter.data.id, values.videoFile, "video");
         }
 

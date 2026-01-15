@@ -13,11 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, X, FileText, Video } from "lucide-react";
+import { Upload, X, FileText, Video, Link } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
+  videoUrl: z.string().optional(),
   videoFile: z.instanceof(File).optional().nullable(),
   contentFile: z.instanceof(File).optional().nullable(),
   isPublished: z.boolean().default(true),
@@ -37,6 +38,20 @@ interface ChapterDialogProps {
     videoUrl?: string | null;
     contentUrl?: string | null;
   } | null;
+}
+
+function getEmbedUrl(url: string) {
+  if (!url) return null;
+  
+  // Handle standard YouTube URLs
+  const youtubeRegex = /(?:youtube\.com\/(?:[^\\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\\/\s]{11})/i;
+  const match = url.match(youtubeRegex);
+  
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}`;
+  }
+  
+  return null;
 }
 
 export function ChapterDialog({ 
@@ -64,6 +79,7 @@ export function ChapterDialog({
   });
 
   const videoFile = watch("videoFile");
+  const videoUrlInput = watch("videoUrl");
   const contentFile = watch("contentFile");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -72,12 +88,12 @@ export function ChapterDialog({
       const url = URL.createObjectURL(videoFile);
       setPreviewUrl(url);
       return () => URL.revokeObjectURL(url);
-    } else if (initialData?.videoUrl) {
-      setPreviewUrl(initialData.videoUrl);
+    } else if (videoUrlInput) {
+      setPreviewUrl(videoUrlInput);
     } else {
       setPreviewUrl(null);
     }
-  }, [videoFile, initialData]);
+  }, [videoFile, videoUrlInput]);
 
   useEffect(() => {
     if (open) {
@@ -85,6 +101,7 @@ export function ChapterDialog({
         reset({
           title: initialData.title,
           isPublished: initialData.isPublished,
+          videoUrl: initialData.videoUrl || "",
           videoFile: null,
           contentFile: null,
         });
@@ -92,6 +109,7 @@ export function ChapterDialog({
         reset({
           title: "",
           isPublished: true,
+          videoUrl: "",
           videoFile: null,
           contentFile: null,
         });
@@ -107,6 +125,8 @@ export function ChapterDialog({
     const file = e.target.files?.[0] || null;
     setValue(field, file);
   };
+
+  const embedUrl = previewUrl ? getEmbedUrl(previewUrl) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,14 +153,39 @@ export function ChapterDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="videoUrl">URL del video (Opcional)</Label>
+            <div className="relative">
+              <Link className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="videoUrl"
+                placeholder="https://..."
+                className="pl-8"
+                {...register("videoUrl")}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si ingresas una URL, esta tendrá prioridad sobre el archivo subido.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Video del capítulo (Opcional)</Label>
             {previewUrl ? (
               <div className="relative rounded-lg border border-border overflow-hidden bg-black/5">
-                <video 
-                  src={previewUrl} 
-                  controls 
-                  className="w-full max-h-[300px] aspect-video object-contain bg-black" 
-                />
+                {embedUrl ? (
+                  <iframe
+                    src={embedUrl}
+                    className="w-full max-h-[300px] aspect-video bg-black"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video 
+                    src={previewUrl} 
+                    controls 
+                    className="w-full max-h-[300px] aspect-video object-contain bg-black" 
+                  />
+                )}
                 <div className="absolute top-2 right-2 flex gap-2">
                    <div className="relative">
                       <input 

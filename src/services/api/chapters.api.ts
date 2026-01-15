@@ -31,6 +31,7 @@ export interface CreateChapterDto {
   moduleId: number;
   orderIndex: number;
   isPublished: boolean;
+  videoUrl?: string;
 }
 
 export interface UpdateChapterDto {
@@ -38,6 +39,7 @@ export interface UpdateChapterDto {
   description?: string | null;
   orderIndex?: number;
   isPublished?: boolean;
+  videoUrl?: string | null;
 }
 
 export interface RequestUploadDto {

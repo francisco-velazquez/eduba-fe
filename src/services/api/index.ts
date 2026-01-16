@@ -29,3 +29,13 @@ export type { AssignSubjectsDto, UpdateStudentGradeDto, GradeSubjectResponse } f
 
 export { chaptersApi, mapApiChapter } from "./chapters.api";
 export type { ApiChapter, CreateChapterDto, UpdateChapterDto, AppChapter } from "./chapters.api";
+
+export { studentSubjectsApi, mapApiStudentSubjects, getCourseColor } from "./student-subjects.api";
+export type {
+  ApiStudentGrade,
+  ApiSubjectModule,
+  ApiStudentSubject,
+  ApiStudentSubjectsResponse,
+  AppStudentCourse,
+  AppStudentSubjectsData,
+} from "./student-subjects.api";

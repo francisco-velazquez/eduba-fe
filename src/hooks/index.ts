@@ -9,3 +9,4 @@ export { useTeachers, useTeacher, useCreateTeacher, useUpdateTeacher, useDeleteT
 export { useStudents, useStudent, useCreateStudent, useUpdateStudent, useDeleteStudent } from "./useStudents";
 export { useGradeSubjects, useAssignSubjectsToTeacher, useUpdateStudentGrade } from "./useAssignments";
 export { useStudentCourses } from "./useStudentCourses";
+export { useCourseDetails } from "./useCourseDetails";

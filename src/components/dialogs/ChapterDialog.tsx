@@ -14,17 +14,23 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Upload, X, FileText, Video, Link } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
-const formSchema = z.object({
+const baseSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
-  videoUrl: z.string().optional(),
+  videoUrl: z.string().optional().refine((val) => {
+    if (!val) return true;
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+    const vimeoRegex = /^(https?:\/\/)?(www\.)?(vimeo\.com)\/.+$/;
+    const s3Regex = /^(https?:\/\/)?(www\.)?.*\.amazonaws\.com\/.*$/;
+    return youtubeRegex.test(val) || vimeoRegex.test(val) || s3Regex.test(val);
+  }, "La URL debe ser de YouTube, Vimeo o Amazon S3"),
   videoFile: z.instanceof(File).optional().nullable(),
   contentFile: z.instanceof(File).optional().nullable(),
   isPublished: z.boolean().default(true),
 });
 
-export type ChapterFormValues = z.infer<typeof formSchema>;
+export type ChapterFormValues = z.infer<typeof baseSchema>;
 
 interface ChapterDialogProps {
   open: boolean;
@@ -45,10 +51,18 @@ function getEmbedUrl(url: string) {
   
   // Handle standard YouTube URLs
   const youtubeRegex = /(?:youtube\.com\/(?:[^\\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\\/\s]{11})/i;
-  const match = url.match(youtubeRegex);
+  const youtubeMatch = url.match(youtubeRegex);
   
-  if (match && match[1]) {
-    return `https://www.youtube.com/embed/${match[1]}`;
+  if (youtubeMatch && youtubeMatch[1]) {
+    return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+  }
+
+  // Handle Vimeo URLs
+  const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/i;
+  const vimeoMatch = url.match(vimeoRegex);
+
+  if (vimeoMatch && vimeoMatch[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
   }
   
   return null;
@@ -62,6 +76,19 @@ export function ChapterDialog({
   mode = "create",
   initialData
 }: ChapterDialogProps) {
+  const hasExistingContent = !!initialData?.contentUrl;
+
+  const formSchema = useMemo(() => {
+    return baseSchema.refine((data) => {
+      const hasVideo = !!data.videoUrl || !!data.videoFile;
+      const hasContent = !!data.contentFile || hasExistingContent;
+      return hasVideo || hasContent;
+    }, {
+      message: "Se requiere al menos un video (URL o archivo) o material de contenido",
+      path: ["videoUrl"],
+    });
+  }, [hasExistingContent]);
+
   const {
     register,
     handleSubmit,
@@ -118,6 +145,10 @@ export function ChapterDialog({
   }, [open, mode, initialData, reset]);
 
   const handleFormSubmit: SubmitHandler<ChapterFormValues> = (values) => {
+    // Si se proporciona una URL, limpiamos el archivo de video para evitar enviar ambos
+    if (values.videoUrl) {
+      values.videoFile = null;
+    }
     onSubmit(values);
   };
 
@@ -163,6 +194,9 @@ export function ChapterDialog({
                 {...register("videoUrl")}
               />
             </div>
+            {errors.videoUrl && (
+              <p className="text-sm text-destructive mt-1">{errors.videoUrl.message}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               Si ingresas una URL, esta tendrá prioridad sobre el archivo subido.
             </p>

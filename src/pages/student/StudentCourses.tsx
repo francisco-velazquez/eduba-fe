@@ -16,7 +16,7 @@ export default function StudentCourses() {
     : "Sin grado asignado";
 
   const handleContinueCourse = (courseId: number) => {
-    navigate(`/alumno/cursos/${courseId}`);
+    navigate(`/alumno/curso/${courseId}`);
   };
 
   if (isLoading) {

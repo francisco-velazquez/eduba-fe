@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Play,
   CheckCircle,
@@ -9,107 +10,93 @@ import {
   ChevronRight,
   Download,
   ArrowLeft,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-
-const courseContent = {
-  name: "Matemáticas",
-  teacher: "Prof. Juan García",
-  progress: 65,
-  modules: [
-    {
-      id: 1,
-      name: "Módulo 1: Ecuaciones Lineales",
-      completed: true,
-      chapters: [
-        {
-          id: 1,
-          name: "Introducción a las ecuaciones",
-          completed: true,
-          duration: "15:30",
-          type: "video",
-        },
-        {
-          id: 2,
-          name: "Resolución de ecuaciones simples",
-          completed: true,
-          duration: "22:15",
-          type: "video",
-        },
-        {
-          id: 3,
-          name: "Ejercicios prácticos",
-          completed: true,
-          type: "pdf",
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: "Módulo 2: Sistemas de Ecuaciones",
-      completed: false,
-      chapters: [
-        {
-          id: 4,
-          name: "Método de sustitución",
-          completed: true,
-          duration: "18:45",
-          type: "video",
-        },
-        {
-          id: 5,
-          name: "Método de igualación",
-          completed: false,
-          duration: "20:00",
-          type: "video",
-          current: true,
-        },
-        {
-          id: 6,
-          name: "Ejercicios de sistemas",
-          completed: false,
-          type: "pdf",
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "Módulo 3: Ecuaciones Cuadráticas",
-      completed: false,
-      chapters: [
-        {
-          id: 7,
-          name: "Introducción a cuadráticas",
-          completed: false,
-          duration: "25:00",
-          type: "video",
-        },
-        {
-          id: 8,
-          name: "Fórmula general",
-          completed: false,
-          duration: "30:00",
-          type: "video",
-        },
-      ],
-    },
-  ],
-};
+import { LoadingSpinner } from "@/components/common";
+import { useCourseDetails, CourseChapter } from "@/hooks/useCourseDetails";
 
 export default function StudentCourseViewer() {
-  const [expandedModules, setExpandedModules] = useState<number[]>([1, 2]);
-  const [selectedChapter, setSelectedChapter] = useState(5);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const courseId = parseInt(id || "0", 10);
+  
+  const { course, isLoading, isError, notFound } = useCourseDetails(courseId);
 
-  const toggleModule = (id: number) => {
+  // Get all chapters flattened
+  const allChapters = useMemo(() => {
+    if (!course) return [];
+    return course.modules.flatMap((m) => m.chapters);
+  }, [course]);
+
+  // Find the first non-completed chapter or the first chapter
+  const initialChapterId = useMemo(() => {
+    if (allChapters.length === 0) return 0;
+    const currentChapter = allChapters.find((c) => c.current);
+    if (currentChapter) return currentChapter.id;
+    const firstIncomplete = allChapters.find((c) => !c.completed);
+    return firstIncomplete?.id || allChapters[0]?.id || 0;
+  }, [allChapters]);
+
+  const [expandedModules, setExpandedModules] = useState<number[]>([]);
+  const [selectedChapter, setSelectedChapter] = useState<number>(0);
+
+  // Initialize expanded modules and selected chapter when course loads
+  useMemo(() => {
+    if (course && expandedModules.length === 0) {
+      // Expand first two modules by default
+      const firstTwoModules = course.modules.slice(0, 2).map((m) => m.id);
+      setExpandedModules(firstTwoModules);
+    }
+    if (initialChapterId && selectedChapter === 0) {
+      setSelectedChapter(initialChapterId);
+    }
+  }, [course, initialChapterId]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError || notFound) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            {notFound ? "Curso no encontrado" : "Error al cargar el curso"}
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {notFound
+              ? "El curso que buscas no existe o no tienes acceso."
+              : "Ocurrió un error al cargar el contenido del curso."}
+          </p>
+          <Button onClick={() => navigate("/alumno/cursos")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a mis cursos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) return null;
+
+  const toggleModule = (moduleId: number) => {
     setExpandedModules((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+      prev.includes(moduleId) ? prev.filter((m) => m !== moduleId) : [...prev, moduleId]
     );
   };
 
-  const currentChapter = courseContent.modules
-    .flatMap((m) => m.chapters)
-    .find((c) => c.id === selectedChapter);
+  const currentChapter: CourseChapter | undefined = allChapters.find(
+    (c) => c.id === selectedChapter
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,14 +111,14 @@ export default function StudentCourseViewer() {
           </Button>
           <div className="h-6 w-px bg-border" />
           <div>
-            <h1 className="font-semibold text-foreground">{courseContent.name}</h1>
-            <p className="text-xs text-muted-foreground">{courseContent.teacher}</p>
+            <h1 className="font-semibold text-foreground">{course.name}</h1>
+            <p className="text-xs text-muted-foreground">{course.grade.name} - {course.grade.code}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-medium text-foreground">{courseContent.progress}% completado</p>
-            <Progress value={courseContent.progress} className="h-1.5 w-32" />
+            <p className="text-sm font-medium text-foreground">{course.progress}% completado</p>
+            <Progress value={course.progress} className="h-1.5 w-32" />
           </div>
         </div>
       </div>
@@ -143,7 +130,7 @@ export default function StudentCourseViewer() {
             <h2 className="font-semibold text-foreground mb-4">Contenido del Curso</h2>
             
             <div className="space-y-2">
-              {courseContent.modules.map((module) => (
+              {course.modules.map((module) => (
                 <div key={module.id} className="border border-border rounded-lg overflow-hidden">
                   {/* Module Header */}
                   <button
@@ -157,7 +144,7 @@ export default function StudentCourseViewer() {
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                       <span className="text-sm font-medium text-foreground text-left">
-                        {module.name}
+                        {module.title}
                       </span>
                     </div>
                     {module.completed && (
@@ -189,7 +176,7 @@ export default function StudentCourseViewer() {
                             <p className={`text-sm truncate ${
                               selectedChapter === chapter.id ? "text-violet-600 font-medium" : "text-foreground"
                             }`}>
-                              {chapter.name}
+                              {chapter.title}
                             </p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {chapter.type === "video" ? (
@@ -226,7 +213,7 @@ export default function StudentCourseViewer() {
                     <div className="h-20 w-20 rounded-full bg-violet-500/20 flex items-center justify-center mx-auto mb-4">
                       <Play className="h-10 w-10 text-violet-500" />
                     </div>
-                    <p className="text-white text-lg font-medium">{currentChapter.name}</p>
+                    <p className="text-white text-lg font-medium">{currentChapter.title}</p>
                     {currentChapter.duration && (
                       <p className="text-slate-400 text-sm mt-1">Duración: {currentChapter.duration}</p>
                     )}
@@ -236,7 +223,7 @@ export default function StudentCourseViewer() {
                 {/* Lesson Info */}
                 <div className="bg-card rounded-xl border border-border p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-2">
-                    {currentChapter.name}
+                    {currentChapter.title}
                   </h2>
                   <p className="text-muted-foreground mb-4">
                     En esta lección aprenderás los conceptos fundamentales sobre el tema. 

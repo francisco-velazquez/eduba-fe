@@ -21,6 +21,8 @@ export interface ApiChapter {
   moduleId: number;
   orderIndex: number;
   isPublished: boolean;
+  videoUrl: string | null;
+  contentUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +69,8 @@ export function mapApiChapter(apiChapter: ApiChapter) {
     moduleId: apiChapter.moduleId,
     orderIndex: apiChapter.orderIndex,
     isPublished: apiChapter.isPublished,
+    videoUrl: apiChapter.videoUrl,
+    contentUrl: apiChapter.contentUrl,
     fechaCreacion: apiChapter.createdAt,
     fechaActualizacion: apiChapter.updatedAt,
   };

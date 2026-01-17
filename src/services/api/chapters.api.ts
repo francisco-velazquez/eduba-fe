@@ -160,7 +160,7 @@ export const chaptersApi = {
    * Assuming standard REST nesting or query param, adjusting to common patterns
    */
   async getByModule(moduleId: number) {
-    const response = await httpClient.get<ApiChapter[]>(`/modules/${moduleId}/chapters`);
+    const response = await httpClient.get<ApiChapter[]>(`/chapters/by-module/${moduleId}`);
     return {
       ...response,
       data: response.data?.map(mapApiChapter) ?? null,

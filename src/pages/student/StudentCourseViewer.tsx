@@ -54,7 +54,7 @@ export default function StudentCourseViewer() {
     if (initialChapterId && selectedChapter === 0) {
       setSelectedChapter(initialChapterId);
     }
-  }, [course, initialChapterId]);
+  }, [course, expandedModules.length, initialChapterId, selectedChapter]);
 
   // Loading state
   if (isLoading) {

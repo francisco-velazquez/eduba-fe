@@ -5,6 +5,7 @@ import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useStudentCourses } from "@/hooks/useStudentCourses";
 import { getCourseColor } from "@/services/api/student-subjects.api";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from 'react';
 
 export default function StudentCourses() {
   const { courses, currentGrade, isLoading, isError, error } = useStudentCourses();
@@ -17,7 +18,11 @@ export default function StudentCourses() {
 
   const handleContinueCourse = (courseId: number) => {
     navigate(`/alumno/curso/${courseId}`);
-  };
+  };  
+  
+  useEffect(() => {
+    console.log(courses)
+  }, [courses]);
 
   if (isLoading) {
     return (

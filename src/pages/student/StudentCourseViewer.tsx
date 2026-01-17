@@ -11,11 +11,13 @@ import {
   Download,
   ArrowLeft,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { LoadingSpinner } from "@/components/common";
 import { useCourseDetails, CourseChapter } from "@/hooks/useCourseDetails";
+import { VideoPlayer } from "@/components/video";
 
 export default function StudentCourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -98,6 +100,87 @@ export default function StudentCourseViewer() {
     (c) => c.id === selectedChapter
   );
 
+  // Find next chapter for navigation
+  const currentIndex = allChapters.findIndex((c) => c.id === selectedChapter);
+  const nextChapter = currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
+
+  const handleVideoEnded = () => {
+    // Auto-advance to next chapter when video ends
+    if (nextChapter) {
+      setSelectedChapter(nextChapter.id);
+      // Ensure the module containing the next chapter is expanded
+      const nextModule = course.modules.find((m) => 
+        m.chapters.some((c) => c.id === nextChapter.id)
+      );
+      if (nextModule && !expandedModules.includes(nextModule.id)) {
+        setExpandedModules((prev) => [...prev, nextModule.id]);
+      }
+    }
+  };
+
+  const renderContent = () => {
+    if (!currentChapter) {
+      return (
+        <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center">
+          <div className="text-center">
+            <FileText className="h-16 w-16 text-slate-500 mx-auto mb-4" />
+            <p className="text-white text-lg">Selecciona un capítulo para comenzar</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Video content
+    if (currentChapter.type === "video" && currentChapter.videoUrl) {
+      return (
+        <VideoPlayer
+          src={currentChapter.videoUrl}
+          title={currentChapter.title}
+          onEnded={handleVideoEnded}
+          className="mb-6"
+        />
+      );
+    }
+
+    // PDF content
+    if (currentChapter.type === "pdf" && currentChapter.contentUrl) {
+      return (
+        <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl flex flex-col items-center justify-center mb-6 border border-border">
+          <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+          <p className="text-foreground text-lg font-medium mb-2">{currentChapter.title}</p>
+          <p className="text-muted-foreground text-sm mb-4">Documento PDF disponible</p>
+          <div className="flex gap-2">
+            <Button asChild>
+              <a href={currentChapter.contentUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Abrir PDF
+              </a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href={currentChapter.contentUrl} download>
+                <Download className="h-4 w-4 mr-2" />
+                Descargar
+              </a>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // No content available
+    return (
+      <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center mb-6">
+        <div className="text-center">
+          <div className="h-20 w-20 rounded-full bg-violet-500/20 flex items-center justify-center mx-auto mb-4">
+            <Play className="h-10 w-10 text-violet-500" />
+          </div>
+          <p className="text-white text-lg font-medium">{currentChapter.title}</p>
+          <p className="text-slate-400 text-sm mt-2">Contenido no disponible</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
@@ -129,119 +212,143 @@ export default function StudentCourseViewer() {
           <div className="p-4">
             <h2 className="font-semibold text-foreground mb-4">Contenido del Curso</h2>
             
-            <div className="space-y-2">
-              {course.modules.map((module) => (
-                <div key={module.id} className="border border-border rounded-lg overflow-hidden">
-                  {/* Module Header */}
-                  <button
-                    onClick={() => toggleModule(module.id)}
-                    className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      {expandedModules.includes(module.id) ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            {course.modules.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No hay módulos disponibles</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {course.modules.map((module) => (
+                  <div key={module.id} className="border border-border rounded-lg overflow-hidden">
+                    {/* Module Header */}
+                    <button
+                      onClick={() => toggleModule(module.id)}
+                      className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        {expandedModules.includes(module.id) ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span className="text-sm font-medium text-foreground text-left">
+                          {module.title}
+                        </span>
+                      </div>
+                      {module.completed && (
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
                       )}
-                      <span className="text-sm font-medium text-foreground text-left">
-                        {module.title}
-                      </span>
-                    </div>
-                    {module.completed && (
-                      <CheckCircle className="h-4 w-4 text-emerald-500" />
-                    )}
-                  </button>
+                    </button>
 
-                  {/* Chapters */}
-                  {expandedModules.includes(module.id) && (
-                    <div className="divide-y divide-border">
-                      {module.chapters.map((chapter) => (
-                        <button
-                          key={chapter.id}
-                          onClick={() => setSelectedChapter(chapter.id)}
-                          className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
-                            selectedChapter === chapter.id
-                              ? "bg-violet-500/10 border-l-2 border-violet-500"
-                              : "hover:bg-muted/30"
-                          }`}
-                        >
-                          {chapter.completed ? (
-                            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                          ) : chapter.current ? (
-                            <Play className="h-4 w-4 text-violet-500 flex-shrink-0" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm truncate ${
-                              selectedChapter === chapter.id ? "text-violet-600 font-medium" : "text-foreground"
-                            }`}>
-                              {chapter.title}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {chapter.type === "video" ? (
-                                <>
-                                  <Video className="h-3 w-3" />
-                                  {chapter.duration}
-                                </>
-                              ) : (
-                                <>
-                                  <FileText className="h-3 w-3" />
-                                  PDF
-                                </>
-                              )}
-                            </div>
+                    {/* Chapters */}
+                    {expandedModules.includes(module.id) && (
+                      <div className="divide-y divide-border">
+                        {module.chapters.length === 0 ? (
+                          <div className="p-3 text-center">
+                            <p className="text-xs text-muted-foreground">Sin capítulos</p>
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                        ) : (
+                          module.chapters.map((chapter) => (
+                            <button
+                              key={chapter.id}
+                              onClick={() => setSelectedChapter(chapter.id)}
+                              className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
+                                selectedChapter === chapter.id
+                                  ? "bg-violet-500/10 border-l-2 border-violet-500"
+                                  : "hover:bg-muted/30"
+                              }`}
+                            >
+                              {chapter.completed ? (
+                                <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                              ) : chapter.current ? (
+                                <Play className="h-4 w-4 text-violet-500 flex-shrink-0" />
+                              ) : (
+                                <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm truncate ${
+                                  selectedChapter === chapter.id ? "text-violet-600 font-medium" : "text-foreground"
+                                }`}>
+                                  {chapter.title}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {chapter.type === "video" ? (
+                                    <>
+                                      <Video className="h-3 w-3" />
+                                      <span>Video</span>
+                                    </>
+                                  ) : chapter.type === "pdf" ? (
+                                    <>
+                                      <FileText className="h-3 w-3" />
+                                      <span>PDF</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FileText className="h-3 w-3" />
+                                      <span>Contenido</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
         {/* Main Content - Video/Resource Viewer */}
         <main className="flex-1 h-[calc(100vh-57px)] overflow-y-auto">
           <div className="p-8">
-            {currentChapter && (
-              <>
-                {/* Video Player Placeholder */}
-                <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center mb-6">
-                  <div className="text-center">
-                    <div className="h-20 w-20 rounded-full bg-violet-500/20 flex items-center justify-center mx-auto mb-4">
-                      <Play className="h-10 w-10 text-violet-500" />
-                    </div>
-                    <p className="text-white text-lg font-medium">{currentChapter.title}</p>
-                    {currentChapter.duration && (
-                      <p className="text-slate-400 text-sm mt-1">Duración: {currentChapter.duration}</p>
-                    )}
-                  </div>
-                </div>
+            {renderContent()}
 
-                {/* Lesson Info */}
-                <div className="bg-card rounded-xl border border-border p-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-2">
-                    {currentChapter.title}
-                  </h2>
-                  <p className="text-muted-foreground mb-4">
-                    En esta lección aprenderás los conceptos fundamentales sobre el tema. 
-                    Asegúrate de tomar notas y practicar los ejercicios.
-                  </p>
-                  
-                  <div className="flex items-center gap-4">
+            {/* Lesson Info */}
+            {currentChapter && (
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  {currentChapter.title}
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  {currentChapter.description || 
+                    "En esta lección aprenderás los conceptos fundamentales sobre el tema. Asegúrate de tomar notas y practicar los ejercicios."}
+                </p>
+                
+                <div className="flex items-center gap-4 flex-wrap">
+                  {currentChapter.completed ? (
+                    <Button variant="outline" className="text-emerald-600 border-emerald-600">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Completado
+                    </Button>
+                  ) : (
                     <Button className="bg-violet-600 hover:bg-violet-700">
-                      <Play className="h-4 w-4 mr-2" />
-                      {currentChapter.completed ? "Ver de nuevo" : "Comenzar"}
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Marcar como completado
                     </Button>
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Descargar Material
+                  )}
+                  
+                  {nextChapter && (
+                    <Button variant="outline" onClick={() => setSelectedChapter(nextChapter.id)}>
+                      Siguiente: {nextChapter.title}
+                      <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
-                  </div>
+                  )}
+
+                  {currentChapter.contentUrl && (
+                    <Button variant="outline" asChild>
+                      <a href={currentChapter.contentUrl} download>
+                        <Download className="h-4 w-4 mr-2" />
+                        Descargar Material
+                      </a>
+                    </Button>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </main>

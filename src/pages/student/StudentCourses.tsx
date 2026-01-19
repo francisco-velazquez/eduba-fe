@@ -2,14 +2,20 @@ import { BookOpen, Play, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
-import { useStudentCourses } from "@/hooks/useStudentCourses";
+import { useStudentCourses, useCoursesProgress } from "@/hooks";
 import { getCourseColor } from "@/services/api/student-subjects.api";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 
 export default function StudentCourses() {
   const { courses, currentGrade, isLoading, isError, error } = useStudentCourses();
   const navigate = useNavigate();
+
+  // Get all course IDs for progress fetching
+  const courseIds = useMemo(() => courses.map((c) => c.id), [courses]);
+  
+  // Fetch progress for all courses in parallel
+  const { progressMap, isLoading: isLoadingProgress } = useCoursesProgress(courseIds);
 
   // Format grade info for header
   const gradeInfo = currentGrade
@@ -18,13 +24,23 @@ export default function StudentCourses() {
 
   const handleContinueCourse = (courseId: number) => {
     navigate(`/alumno/curso/${courseId}`);
-  };  
-  
-  useEffect(() => {
-    console.log(courses)
-  }, [courses]);
+  };
 
-  if (isLoading) {
+  // Helper to get course progress from the progress map
+  const getCourseProgress = (courseId: number) => {
+    const progress = progressMap[courseId];
+    return progress?.progressPercentage ?? 0;
+  };
+
+  const getCompletedModules = (courseId: number, totalModules: number) => {
+    const progress = progressMap[courseId];
+    if (!progress || progress.totalChapters === 0) return 0;
+    // Estimate completed modules based on chapter completion ratio
+    const ratio = progress.completedChapters / progress.totalChapters;
+    return Math.floor(ratio * totalModules);
+  };
+
+  if (isLoading || isLoadingProgress) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <LoadingSpinner size="lg" />
@@ -110,11 +126,11 @@ export default function StudentCourses() {
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Progreso</span>
-                      <span className="font-medium text-foreground">{course.progress}%</span>
+                      <span className="font-medium text-foreground">{getCourseProgress(course.id)}%</span>
                     </div>
-                    <Progress value={course.progress} className="h-2" />
+                    <Progress value={getCourseProgress(course.id)} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {course.completedModules} de {course.totalModules} módulos completados
+                      {getCompletedModules(course.id, course.totalModules)} de {course.totalModules} módulos completados
                     </p>
                   </div>
 

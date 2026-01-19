@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Play,
@@ -12,11 +12,13 @@ import {
   ArrowLeft,
   AlertCircle,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { LoadingSpinner } from "@/components/common";
-import { useCourseDetails, CourseChapter } from "@/hooks/useCourseDetails";
+import { useCourseDetails, useSubjectProgress, useCompleteChapter } from "@/hooks";
+import type { CourseChapter } from "@/hooks/useCourseDetails";
 import { VideoPlayer } from "@/components/video";
 
 export default function StudentCourseViewer() {
@@ -25,7 +27,10 @@ export default function StudentCourseViewer() {
   const courseId = parseInt(id || "0", 10);
   
   const { course, isLoading, isError, notFound } = useCourseDetails(courseId);
-
+  
+  // Fetch progress for this course
+  const { progress, isLoading: isLoadingProgress } = useSubjectProgress(courseId);
+  const completeChapterMutation = useCompleteChapter();
   // Get all chapters flattened
   const allChapters = useMemo(() => {
     if (!course) return [];
@@ -100,23 +105,52 @@ export default function StudentCourseViewer() {
     (c) => c.id === selectedChapter
   );
 
+  // Check if a chapter is completed based on progress data
+  const isChapterCompleted = useCallback((chapterId: number): boolean => {
+    return progress?.completedChapterIds?.includes(chapterId) ?? false;
+  }, [progress]);
+
+  // Calculate real progress
+  const realProgress = progress?.progressPercentage ?? 0;
+
   // Find next chapter for navigation
   const currentIndex = allChapters.findIndex((c) => c.id === selectedChapter);
   const nextChapter = currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
 
-  const handleVideoEnded = () => {
+  // Handle marking chapter as complete
+  const handleCompleteChapter = useCallback(async (chapterId: number) => {
+    if (!isChapterCompleted(chapterId) && !completeChapterMutation.isPending) {
+      await completeChapterMutation.mutateAsync(chapterId);
+    }
+  }, [isChapterCompleted, completeChapterMutation]);
+
+  const handleVideoEnded = useCallback(() => {
+    // Mark current chapter as complete when video ends
+    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
+      handleCompleteChapter(currentChapter.id);
+    }
     // Auto-advance to next chapter when video ends
     if (nextChapter) {
       setSelectedChapter(nextChapter.id);
       // Ensure the module containing the next chapter is expanded
-      const nextModule = course.modules.find((m) => 
+      const nextModule = course?.modules.find((m) => 
         m.chapters.some((c) => c.id === nextChapter.id)
       );
       if (nextModule && !expandedModules.includes(nextModule.id)) {
         setExpandedModules((prev) => [...prev, nextModule.id]);
       }
     }
-  };
+  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter, course, expandedModules]);
+
+  // Handle going to next chapter (also marks current as complete)
+  const handleNextChapter = useCallback(() => {
+    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
+      handleCompleteChapter(currentChapter.id);
+    }
+    if (nextChapter) {
+      setSelectedChapter(nextChapter.id);
+    }
+  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter]);
 
   const renderContent = () => {
     if (!currentChapter) {
@@ -200,8 +234,8 @@ export default function StudentCourseViewer() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm font-medium text-foreground">{course.progress}% completado</p>
-            <Progress value={course.progress} className="h-1.5 w-32" />
+            <p className="text-sm font-medium text-foreground">{realProgress}% completado</p>
+            <Progress value={realProgress} className="h-1.5 w-32" />
           </div>
         </div>
       </div>
@@ -236,7 +270,7 @@ export default function StudentCourseViewer() {
                           {module.title}
                         </span>
                       </div>
-                      {module.completed && (
+                      {module.chapters.every((c) => isChapterCompleted(c.id)) && module.chapters.length > 0 && (
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
                       )}
                     </button>
@@ -259,9 +293,9 @@ export default function StudentCourseViewer() {
                                   : "hover:bg-muted/30"
                               }`}
                             >
-                              {chapter.completed ? (
+                              {isChapterCompleted(chapter.id) ? (
                                 <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                              ) : chapter.current ? (
+                              ) : selectedChapter === chapter.id ? (
                                 <Play className="h-4 w-4 text-violet-500 flex-shrink-0" />
                               ) : (
                                 <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -320,20 +354,28 @@ export default function StudentCourseViewer() {
                 </p>
                 
                 <div className="flex items-center gap-4 flex-wrap">
-                  {currentChapter.completed ? (
-                    <Button variant="outline" className="text-emerald-600 border-emerald-600">
+                  {isChapterCompleted(currentChapter.id) ? (
+                    <Button variant="outline" className="text-emerald-600 border-emerald-600" disabled>
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Completado
                     </Button>
                   ) : (
-                    <Button className="bg-violet-600 hover:bg-violet-700">
-                      <CheckCircle className="h-4 w-4 mr-2" />
+                    <Button 
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={() => handleCompleteChapter(currentChapter.id)}
+                      disabled={completeChapterMutation.isPending}
+                    >
+                      {completeChapterMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                      )}
                       Marcar como completado
                     </Button>
                   )}
                   
                   {nextChapter && (
-                    <Button variant="outline" onClick={() => setSelectedChapter(nextChapter.id)}>
+                    <Button variant="outline" onClick={handleNextChapter}>
                       Siguiente: {nextChapter.title}
                       <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>

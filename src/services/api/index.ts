@@ -39,3 +39,6 @@ export type {
   AppStudentCourse,
   AppStudentSubjectsData,
 } from "./student-subjects.api";
+
+export { progressApi } from "./progress.api";
+export type { ApiSubjectProgress, SubjectProgress } from "./progress.api";

@@ -29,8 +29,12 @@ export default function StudentCourseViewer() {
   const { course, isLoading, isError, notFound } = useCourseDetails(courseId);
   
   // Fetch progress for this course
-  const { progress, isLoading: isLoadingProgress } = useSubjectProgress(courseId);
+  const { progress } = useSubjectProgress(courseId);
   const completeChapterMutation = useCompleteChapter();
+  
+  const [expandedModules, setExpandedModules] = useState<number[]>([]);
+  const [selectedChapter, setSelectedChapter] = useState<number>(0);
+  
   // Get all chapters flattened
   const allChapters = useMemo(() => {
     if (!course) return [];
@@ -46,13 +50,9 @@ export default function StudentCourseViewer() {
     return firstIncomplete?.id || allChapters[0]?.id || 0;
   }, [allChapters]);
 
-  const [expandedModules, setExpandedModules] = useState<number[]>([]);
-  const [selectedChapter, setSelectedChapter] = useState<number>(0);
-
   // Initialize expanded modules and selected chapter when course loads
   useMemo(() => {
     if (course && expandedModules.length === 0) {
-      // Expand first two modules by default
       const firstTwoModules = course.modules.slice(0, 2).map((m) => m.id);
       setExpandedModules(firstTwoModules);
     }
@@ -60,6 +60,62 @@ export default function StudentCourseViewer() {
       setSelectedChapter(initialChapterId);
     }
   }, [course, expandedModules.length, initialChapterId, selectedChapter]);
+
+  // Current chapter
+  const currentChapter: CourseChapter | undefined = useMemo(() => {
+    return allChapters.find((c) => c.id === selectedChapter);
+  }, [allChapters, selectedChapter]);
+
+  // Find next chapter for navigation
+  const nextChapter = useMemo(() => {
+    const currentIndex = allChapters.findIndex((c) => c.id === selectedChapter);
+    return currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
+  }, [allChapters, selectedChapter]);
+
+  // Check if a chapter is completed based on progress data
+  const isChapterCompleted = useCallback((chapterId: number): boolean => {
+    return progress?.completedChapterIds?.includes(chapterId) ?? false;
+  }, [progress]);
+
+  // Calculate real progress
+  const realProgress = progress?.progressPercentage ?? 0;
+
+  // Handle marking chapter as complete
+  const handleCompleteChapter = useCallback(async (chapterId: number) => {
+    if (!isChapterCompleted(chapterId) && !completeChapterMutation.isPending) {
+      await completeChapterMutation.mutateAsync(chapterId);
+    }
+  }, [isChapterCompleted, completeChapterMutation]);
+
+  const handleVideoEnded = useCallback(() => {
+    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
+      handleCompleteChapter(currentChapter.id);
+    }
+    if (nextChapter) {
+      setSelectedChapter(nextChapter.id);
+      const nextModule = course?.modules.find((m) => 
+        m.chapters.some((c) => c.id === nextChapter.id)
+      );
+      if (nextModule && !expandedModules.includes(nextModule.id)) {
+        setExpandedModules((prev) => [...prev, nextModule.id]);
+      }
+    }
+  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter, course, expandedModules]);
+
+  const handleNextChapter = useCallback(() => {
+    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
+      handleCompleteChapter(currentChapter.id);
+    }
+    if (nextChapter) {
+      setSelectedChapter(nextChapter.id);
+    }
+  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter]);
+
+  const toggleModule = useCallback((moduleId: number) => {
+    setExpandedModules((prev) =>
+      prev.includes(moduleId) ? prev.filter((m) => m !== moduleId) : [...prev, moduleId]
+    );
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -94,63 +150,6 @@ export default function StudentCourseViewer() {
   }
 
   if (!course) return null;
-
-  const toggleModule = (moduleId: number) => {
-    setExpandedModules((prev) =>
-      prev.includes(moduleId) ? prev.filter((m) => m !== moduleId) : [...prev, moduleId]
-    );
-  };
-
-  const currentChapter: CourseChapter | undefined = allChapters.find(
-    (c) => c.id === selectedChapter
-  );
-
-  // Check if a chapter is completed based on progress data
-  const isChapterCompleted = useCallback((chapterId: number): boolean => {
-    return progress?.completedChapterIds?.includes(chapterId) ?? false;
-  }, [progress]);
-
-  // Calculate real progress
-  const realProgress = progress?.progressPercentage ?? 0;
-
-  // Find next chapter for navigation
-  const currentIndex = allChapters.findIndex((c) => c.id === selectedChapter);
-  const nextChapter = currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
-
-  // Handle marking chapter as complete
-  const handleCompleteChapter = useCallback(async (chapterId: number) => {
-    if (!isChapterCompleted(chapterId) && !completeChapterMutation.isPending) {
-      await completeChapterMutation.mutateAsync(chapterId);
-    }
-  }, [isChapterCompleted, completeChapterMutation]);
-
-  const handleVideoEnded = useCallback(() => {
-    // Mark current chapter as complete when video ends
-    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
-      handleCompleteChapter(currentChapter.id);
-    }
-    // Auto-advance to next chapter when video ends
-    if (nextChapter) {
-      setSelectedChapter(nextChapter.id);
-      // Ensure the module containing the next chapter is expanded
-      const nextModule = course?.modules.find((m) => 
-        m.chapters.some((c) => c.id === nextChapter.id)
-      );
-      if (nextModule && !expandedModules.includes(nextModule.id)) {
-        setExpandedModules((prev) => [...prev, nextModule.id]);
-      }
-    }
-  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter, course, expandedModules]);
-
-  // Handle going to next chapter (also marks current as complete)
-  const handleNextChapter = useCallback(() => {
-    if (currentChapter && !isChapterCompleted(currentChapter.id)) {
-      handleCompleteChapter(currentChapter.id);
-    }
-    if (nextChapter) {
-      setSelectedChapter(nextChapter.id);
-    }
-  }, [currentChapter, isChapterCompleted, handleCompleteChapter, nextChapter]);
 
   const renderContent = () => {
     if (!currentChapter) {

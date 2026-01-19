@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,15 @@ export default function Asignaciones() {
   // Mutations
   const assignSubjectsToTeacher = useAssignSubjectsToTeacher();
   const updateStudentGrade = useUpdateStudentGrade();
+
+  useEffect(() => {
+    if (selectedMaestroId) {
+      const teacher = teachers.find(t => t.id === selectedMaestroId);
+      if (teacher && teacher.asignaturas) {
+        setSelectedSubjectIds(teacher.asignaturas.map(s => String(s.id)));
+      }
+    }
+  }, [selectedMaestroId, teachers]);
 
   // Handle assigning subjects to teacher
   const handleAssignToTeacher = () => {
@@ -219,7 +228,7 @@ export default function Asignaciones() {
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <Select value={selectedMaestroId} onValueChange={(value) => {
                   setSelectedMaestroId(value);
-                  setSelectedSubjectIds([]);
+                  setSelectedSubjectIds([]);                  
                 }}>
                   <SelectTrigger className="w-[280px]">
                     <SelectValue placeholder="Seleccionar maestro" />

@@ -3,22 +3,32 @@
  * Base configuration for all API requests
  */
 
-const API_BASE_URL = "https://edubba-bep-prb.onrender.com";
+const API_BASE_URL = "http://localhost:3000";
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
 }
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
   status: number;
 }
 
+export interface ApiError {
+  message?: string;
+  response?: {
+    status?: number;
+  };
+}
+
+export type ResponseInterceptor = (response: ApiResponse<unknown>) => void;
+
 class HttpClient {
   private baseUrl: string;
   private token: string | null = null;
   private user: string | null = null;
+  private interceptors: ResponseInterceptor[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -125,6 +135,13 @@ class HttpClient {
   }
 
   /**
+   * Add a response interceptor
+   */
+  addInterceptor(interceptor: ResponseInterceptor): void {
+    this.interceptors.push(interceptor);
+  }
+
+  /**
    * Make HTTP request
    */
   async request<T>(
@@ -171,7 +188,11 @@ class HttpClient {
         error = "Sesión expirada. Por favor, inicia sesión nuevamente.";
       }
 
-      return { data, error, status };
+      const apiResponse: ApiResponse<T> = { data, error, status };
+      
+      this.interceptors.forEach((interceptor) => interceptor(apiResponse));
+
+      return apiResponse;
     } catch (err) {
       console.error("HTTP Request Error:", err);
       return {

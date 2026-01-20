@@ -3,7 +3,7 @@
  * Handles student progress tracking for courses and chapters
  */
 
-import { httpClient } from "./http-client";
+import { httpClient, ApiError, ApiResponse } from "./http-client";
 
 // API Types for Progress
 export interface ApiChapterProgress {
@@ -52,7 +52,7 @@ export const progressApi = {
   /**
    * Get progress for a specific subject/course
    */
-  async getSubjectProgress(subjectId: number): Promise<{ data: SubjectProgress | null; error: string | null; status: number }> {
+  async getSubjectProgress(subjectId: number): Promise<ApiResponse<SubjectProgress>> {
     try {
       const response = await httpClient.get<ApiSubjectProgress>(
         `/progress/subject/${subjectId}`
@@ -75,7 +75,7 @@ export const progressApi = {
     } catch (error: unknown) {
       console.error(`Error fetching progress for subject ${subjectId}:`, error);
       
-      const err = error as { message?: string; response?: { status?: number } };
+      const err = error as ApiError;
 
       // Retornamos un objeto de error controlado en lugar de lanzar la excepción
       return {
@@ -99,7 +99,7 @@ export const progressApi = {
    * Get progress for multiple subjects at once
    * Fetches in parallel for efficiency
    */
-  async getMultipleSubjectsProgress(subjectIds: number[]) {
+  async getMultipleSubjectsProgress(subjectIds: number[]): Promise<Record<number, SubjectProgress>> {
     console.log("Fetching progress for subjects:", subjectIds)
     const results = await Promise.all(
       subjectIds.map((id) => this.getSubjectProgress(id))

@@ -23,13 +23,27 @@ export default function StudentCourses() {
     : "Sin grado asignado";
 
   const handleContinueCourse = (courseId: number) => {
+    const course = courses.find((c) => c.id === courseId);
+    const progress = progressMap[courseId];
+
+    if (course && progress && course.modules) {
+      console.log('Modules', course.modules)
+      // Buscamos el último capitulo que vio el alumno y lo envíamos a ese
+      const lastChapterId = progress.completedChapterIds[progress.completedChapterIds.length - 1];
+
+      if (lastChapterId) {
+        console.log('Next chapter found')
+        navigate(`/alumno/curso/${courseId}?chapterId=${lastChapterId}`);
+        return;
+      }
+    }
+    
     navigate(`/alumno/curso/${courseId}`);
   };
 
   // Helper to get course progress from the progress map
   const getCourseProgress = (courseId: number) => {
     const progress = progressMap[courseId];
-    console.log('Progress:', progress.progressPercentage)
     return progress?.progressPercentage ?? 0;
   };
 
@@ -176,7 +190,7 @@ export default function StudentCourses() {
                       ) : (
                         <Play className="h-4 w-4 mr-1" />
                       )}
-                      {course.totalModules > 0 ? (isCompleted ? "Completado" : "Continuar") : "Próximamente"}
+                      {course.totalModules > 0 ? (isCompleted ? "Completado" : progressPercentage > 0 ? "Continuar" : "Iniciar") : "Próximamente"}
                     </Button>
                   </div>
                 </div>

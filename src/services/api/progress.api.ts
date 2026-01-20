@@ -65,22 +65,17 @@ export const progressApi = {
       );
 
       if (response.data) {
-        console.log("Progress data for subject", subjectId, response.data)
         return {
           ...response,
           data: mapApiSubjectProgress(response.data),
         };
       }
 
-      console.log("No progress data for subject", subjectId)
-
       return {
         ...response,
         data: null,
       };
-    } catch (error: unknown) {
-      console.error(`Error fetching progress for subject ${subjectId}:`, error);
-      
+    } catch (error: unknown) {      
       const err = error as ApiError;
 
       // Retornamos un objeto de error controlado en lugar de lanzar la excepción
@@ -106,24 +101,17 @@ export const progressApi = {
    * Fetches in parallel for efficiency
    */
   async getMultipleSubjectsProgress(subjectIds: number[]): Promise<Record<number, SubjectProgress>> {
-    console.log("Fetching progress for subjects:", subjectIds)
     const results = await Promise.all(
       subjectIds.map((id) => this.getSubjectProgress(id))
     );
 
-    console.log("Progress Map Result:", results)
 
     const progressMap: Record<number, SubjectProgress> = {};
-    console.log("Progress Map Before:", progressMap)
     results.forEach((result, index) => {
-      console.log("Result:", result.data)
       if (result.data) {
-        console.log("Subject ID:", subjectIds[index])
         progressMap[subjectIds[index]] = result.data;
       }
     });
-
-    console.log("Progress Map API:", progressMap)
 
     return progressMap;
   },

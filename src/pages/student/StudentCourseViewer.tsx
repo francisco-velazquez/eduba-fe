@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Play,
   CheckCircle,
@@ -24,6 +24,8 @@ import { VideoPlayer } from "@/components/video";
 export default function StudentCourseViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const chapterIdParam = searchParams.get("chapterId");
   const courseId = parseInt(id || "0", 10);
   
   const { course, isLoading, isError, notFound } = useCourseDetails(courseId);
@@ -52,6 +54,25 @@ export default function StudentCourseViewer() {
 
   // Initialize expanded modules and selected chapter when course loads
   useMemo(() => {
+    if (!course) return;
+
+    // Si viene un chapterId en la URL, intentar seleccionarlo
+    if (selectedChapter === 0 && chapterIdParam) {
+      const paramId = parseInt(chapterIdParam, 10);
+      if (!isNaN(paramId)) {
+        const targetChapter = allChapters.find((c) => c.id === paramId);
+        if (targetChapter) {
+          setSelectedChapter(paramId);
+          // Expandir el módulo correspondiente
+          const module = course.modules.find((m) => m.chapters.some((c) => c.id === paramId));
+          if (module && !expandedModules.includes(module.id)) {
+            setExpandedModules((prev) => [...prev, module.id]);
+          }
+          return; // Salir para dar prioridad al parámetro de URL
+        }
+      }
+    }
+
     if (course && expandedModules.length === 0) {
       const firstTwoModules = course.modules.slice(0, 2).map((m) => m.id);
       setExpandedModules(firstTwoModules);
@@ -59,7 +80,7 @@ export default function StudentCourseViewer() {
     if (initialChapterId && selectedChapter === 0) {
       setSelectedChapter(initialChapterId);
     }
-  }, [course, expandedModules.length, initialChapterId, selectedChapter]);
+  }, [course, expandedModules.length, initialChapterId, selectedChapter, chapterIdParam, allChapters]);
 
   // Current chapter
   const currentChapter: CourseChapter | undefined = useMemo(() => {

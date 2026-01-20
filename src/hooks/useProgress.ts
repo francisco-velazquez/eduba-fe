@@ -42,8 +42,12 @@ export function useCoursesProgress(subjectIds: number[]) {
   const query = useQuery<Record<number, SubjectProgress>, Error>({
     queryKey: ["courses-progress", subjectIds],
     queryFn: async () => {
+      console.log('Subject IDs:', subjectIds)
       if (subjectIds.length === 0) return {};
-      return progressApi.getMultipleSubjectsProgress(subjectIds);
+      console.log('Fetching progress for subjects:', subjectIds)
+      const response = await progressApi.getMultipleSubjectsProgress(subjectIds);
+      console.log('Progress Map:', response)
+      return response;
     },
     enabled: subjectIds.length > 0,
     staleTime: 2 * 60 * 1000, // 2 minutes

@@ -15,7 +15,7 @@ export default function StudentCourses() {
   const courseIds = useMemo(() => courses.map((c) => c.id), [courses]);
   
   // Fetch progress for all courses in parallel
-  const { progressMap, isLoading: isLoadingProgress } = useCoursesProgress(courseIds);
+  const { progressMap, isLoading: isLoadingProgress, isError: isProgressError } = useCoursesProgress(courseIds);
 
   // Format grade info for header
   const gradeInfo = currentGrade
@@ -28,6 +28,7 @@ export default function StudentCourses() {
 
   // Helper to get course progress from the progress map
   const getCourseProgress = (courseId: number) => {
+    console.log('Progress Map:', JSON.stringify(progressMap))
     const progress = progressMap[courseId];
     return progress?.progressPercentage ?? 0;
   };
@@ -48,7 +49,7 @@ export default function StudentCourses() {
     );
   }
 
-  if (isError) {
+  if (isError || isProgressError) {
     return (
       <div className="space-y-6 md:space-y-8">
         <PageHeader

@@ -1,4 +1,4 @@
-import { BookOpen, Play, Clock, AlertCircle } from "lucide-react";
+import { BookOpen, Play, Clock, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
@@ -28,9 +28,14 @@ export default function StudentCourses() {
 
   // Helper to get course progress from the progress map
   const getCourseProgress = (courseId: number) => {
-    console.log('Progress Map:', JSON.stringify(progressMap))
     const progress = progressMap[courseId];
+    console.log('Progress:', progress.progressPercentage)
     return progress?.progressPercentage ?? 0;
+  };
+
+  const getLastAccessed = (courseId: number) => {
+    const lastAccessed = progressMap[courseId]?.lastActivityAt;
+    return lastAccessed ? new Date(lastAccessed).toLocaleDateString() : "Sin acceder";
   };
 
   const getCompletedModules = (courseId: number, totalModules: number) => {
@@ -90,6 +95,8 @@ export default function StudentCourses() {
           {activeCourses.map((course, index) => {
             const color = getCourseColor(index);
             const colorClasses = getColorClasses(color);
+            const progressPercentage = getCourseProgress(course.id);
+            const isCompleted = progressPercentage === 100;
 
             return (
               <div
@@ -127,9 +134,9 @@ export default function StudentCourses() {
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Progreso</span>
-                      <span className="font-medium text-foreground">{getCourseProgress(course.id)}%</span>
+                      <span className="font-medium text-foreground">{progressPercentage}%</span>
                     </div>
-                    <Progress value={getCourseProgress(course.id)} className="h-2" />
+                    <Progress value={progressPercentage} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-1">
                       {getCompletedModules(course.id, course.totalModules)} de {course.totalModules} módulos completados
                     </p>
@@ -156,16 +163,20 @@ export default function StudentCourses() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {course.lastAccessed || "Sin acceder"}
+                      {getLastAccessed(course.id)}
                     </span>
                     <Button
                       size="sm"
                       onClick={() => handleContinueCourse(course.id)}
                       disabled={course.totalModules === 0}
-                      className="bg-primary hover:bg-primary/90"
+                      className={isCompleted ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary/90"}
                     >
-                      <Play className="h-4 w-4 mr-1" />
-                      {course.totalModules > 0 ? "Continuar" : "Próximamente"}
+                      {isCompleted ? (
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Play className="h-4 w-4 mr-1" />
+                      )}
+                      {course.totalModules > 0 ? (isCompleted ? "Completado" : "Continuar") : "Próximamente"}
                     </Button>
                   </div>
                 </div>

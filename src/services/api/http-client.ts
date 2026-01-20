@@ -3,9 +3,9 @@
  * Base configuration for all API requests
  */
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://edubba-bep-prb.onrender.com";
 
-interface RequestConfig extends RequestInit {
+export interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
 }
 
@@ -22,6 +22,7 @@ export interface ApiError {
   };
 }
 
+export type RequestInterceptor = (config: RequestConfig) => RequestConfig | Promise<RequestConfig>;
 export type ResponseInterceptor = (response: ApiResponse<unknown>) => void;
 
 class HttpClient {
@@ -29,11 +30,22 @@ class HttpClient {
   private token: string | null = null;
   private user: string | null = null;
   private interceptors: ResponseInterceptor[] = [];
+  private requestInterceptors: RequestInterceptor[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.loadToken();
     this.loadUser();
+
+    // Inyectar token automáticamente mediante un interceptor
+    this.addRequestInterceptor((config) => {
+      if (this.token) {
+        const headers = new Headers(config.headers);
+        headers.set("Authorization", `Bearer ${this.token}`);
+        config.headers = headers;
+      }
+      return config;
+    });
   }
 
   /**
@@ -107,13 +119,10 @@ class HttpClient {
    * Build headers for request
    */
   private buildHeaders(customHeaders?: HeadersInit): Headers {
-    const headers = new Headers({
-      "Content-Type": "application/json",
-      ...customHeaders,
-    });
+    const headers = new Headers(customHeaders);
 
-    if (this.token) {
-      headers.set("Authorization", `Bearer ${this.token}`);
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
 
     return headers;
@@ -142,13 +151,26 @@ class HttpClient {
   }
 
   /**
+   * Add a request interceptor
+   */
+  addRequestInterceptor(interceptor: RequestInterceptor): void {
+    this.requestInterceptors.push(interceptor);
+  }
+
+  /**
    * Make HTTP request
    */
   async request<T>(
     endpoint: string,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    const { params, headers: customHeaders, ...restConfig } = config;
+    let finalConfig = config;
+    
+    for (const interceptor of this.requestInterceptors) {
+      finalConfig = await interceptor(finalConfig);
+    }
+
+    const { params, headers: customHeaders, ...restConfig } = finalConfig;
 
     try {
       const headers = this.buildHeaders(customHeaders);

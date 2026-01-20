@@ -19,8 +19,10 @@ export interface ApiSubjectProgress {
   studentId: string;
   totalChapters: number;
   completedChapters: number;
-  progressPercentage: number;
+  percentage: number;
   completedChapterIds: number[];
+  lastActivityAt?: Date;
+  finishedAt?: Date | null;
 }
 
 // App-friendly types
@@ -30,6 +32,8 @@ export interface SubjectProgress {
   completedChapters: number;
   progressPercentage: number;
   completedChapterIds: number[];
+  lastActivityAt?: Date;
+  finishedAt?: Date | null;
 }
 
 /**
@@ -40,8 +44,10 @@ function mapApiSubjectProgress(response: ApiSubjectProgress): SubjectProgress {
     subjectId: response.subjectId,
     totalChapters: response.totalChapters,
     completedChapters: response.completedChapters,
-    progressPercentage: response.progressPercentage,
+    progressPercentage: response.percentage,
     completedChapterIds: response.completedChapterIds,
+    lastActivityAt: response.lastActivityAt,
+    finishedAt: response.finishedAt,
   };
 }
 

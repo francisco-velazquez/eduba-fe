@@ -26,194 +26,288 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PageHeader } from "@/components/common";
-
-const subjects = [
-  { id: "all", name: "Todas las asignaturas" },
-  { id: "1", name: "Matemáticas - 3° Secundaria" },
-  { id: "2", name: "Álgebra - 2° Secundaria" },
-  { id: "3", name: "Geometría - 1° Secundaria" },
-];
-
-const exams = [
-  {
-    id: 1,
-    name: "Examen Parcial - Ecuaciones Lineales",
-    subject: "Matemáticas",
-    grade: "3° Secundaria",
-    questions: 20,
-    duration: 45,
-    status: "active",
-    submitted: 20,
-    total: 32,
-    avgScore: 8.2,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Quiz - Factorización",
-    subject: "Álgebra",
-    grade: "2° Secundaria",
-    questions: 10,
-    duration: 20,
-    status: "completed",
-    submitted: 28,
-    total: 28,
-    avgScore: 7.8,
-    createdAt: "2024-01-10",
-  },
-  {
-    id: 3,
-    name: "Examen Final - Primer Trimestre",
-    subject: "Geometría",
-    grade: "1° Secundaria",
-    questions: 30,
-    duration: 60,
-    status: "draft",
-    submitted: 0,
-    total: 35,
-    avgScore: null,
-    createdAt: "2024-01-20",
-  },
-];
+import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
+import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
+import { ExamDialog, ExamFormValues } from "@/components/dialogs/ExamDialog";
+import { useExams, useCreateExam, useUpdateExam, useDeleteExam } from "@/hooks/useExams";
+import { useTeacherSubjects } from "@/hooks/useSubjects";
+import { AppExam, CreateExamDto } from "@/services/api/exams.api";
 
 export default function TeacherExams() {
-  const [selectedSubject, setSelectedSubject] = useState("all");
+  const { data: exams, isLoading } = useExams();
+  const { data: subjects } = useTeacherSubjects();
+  const createExam = useCreateExam();
+  const updateExam = useUpdateExam();
+  const deleteExam = useDeleteExam();
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Activo
-          </span>
-        );
-      case "completed":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Completado
-          </span>
-        );
-      case "draft":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Borrador
-          </span>
-        );
-      default:
-        return null;
-    }
+  const [selectedSubject, setSelectedSubject] = useState("all");
+  const [isExamDialogOpen, setIsExamDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<AppExam | null>(null);
+  const [examToDelete, setExamToDelete] = useState<number | null>(null);
+  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+
+  // Get all modules from all subjects for filtering
+  const allModules = subjects?.flatMap((s) => 
+    s.modules?.map((m) => ({ ...m, subjectName: s.nombre, subjectId: s.id })) ?? []
+  ) ?? [];
+
+  // Filter exams by selected subject
+  const filteredExams = exams?.filter((exam) => {
+    if (selectedSubject === "all") return true;
+    const module = allModules.find((m) => m.id === exam.moduleId);
+    return module?.subjectId === selectedSubject;
+  }) ?? [];
+
+  const getModuleInfo = (moduleId: number) => {
+    const module = allModules.find((m) => m.id === moduleId);
+    return module ? { name: module.nombre, subject: module.subjectName } : null;
   };
 
+  const handleCreateExam = () => {
+    setSelectedExam(null);
+    setSelectedModuleId(null);
+    setIsExamDialogOpen(true);
+  };
+
+  const handleEditExam = (exam: AppExam) => {
+    setSelectedExam(exam);
+    setSelectedModuleId(exam.moduleId);
+    setIsExamDialogOpen(true);
+  };
+
+  const handleDeleteExam = (examId: number) => {
+    setExamToDelete(examId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!examToDelete) return;
+    await deleteExam.mutateAsync(examToDelete);
+    setIsDeleteDialogOpen(false);
+    setExamToDelete(null);
+  };
+
+  const handleSaveExam = async (values: ExamFormValues) => {
+    if (selectedExam) {
+      // Update existing exam
+      await updateExam.mutateAsync({
+        id: selectedExam.id,
+        data: {
+          title: values.title,
+          questions: values.questions,
+        },
+      });
+    } else if (selectedModuleId) {
+      // Create new exam
+      const createData: CreateExamDto = {
+        title: values.title,
+        moduleId: selectedModuleId,
+        questions: values.questions,
+      };
+      await createExam.mutateAsync(createData);
+    }
+    setIsExamDialogOpen(false);
+    setSelectedExam(null);
+    setSelectedModuleId(null);
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner text="Cargando exámenes..." />;
+  }
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Exámenes"
-        description="Crea y gestiona evaluaciones para tus alumnos"
-        actions={
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Crear Examen
-          </Button>
+    <>
+      <ExamDialog
+        open={isExamDialogOpen}
+        onOpenChange={(open) => {
+          setIsExamDialogOpen(open);
+          if (!open) {
+            setSelectedExam(null);
+            setSelectedModuleId(null);
+          }
+        }}
+        onSubmit={handleSaveExam}
+        isSubmitting={createExam.isPending || updateExam.isPending}
+        mode={selectedExam ? "edit" : "create"}
+        initialData={selectedExam}
+        moduleName={
+          selectedModuleId
+            ? getModuleInfo(selectedModuleId)?.name
+            : undefined
         }
       />
+      
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Eliminar Examen"
+        description="¿Estás seguro de que deseas eliminar este examen? Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+        isLoading={deleteExam.isPending}
+        variant="destructive"
+        confirmText="Eliminar"
+      />
 
-      {/* Filter */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-foreground">Filtrar por:</span>
-          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-            <SelectTrigger className="w-72">
-              <SelectValue placeholder="Seleccionar asignatura" />
-            </SelectTrigger>
-            <SelectContent>
-              {subjects.map((subject) => (
-                <SelectItem key={subject.id} value={subject.id}>
-                  {subject.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <div className="space-y-6">
+        <PageHeader
+          title="Exámenes"
+          description="Crea y gestiona evaluaciones para tus alumnos"
+          actions={
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleCreateExam}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crear Examen
+            </Button>
+          }
+        />
 
-      {/* Exams List */}
-      <div className="space-y-4">
-        {exams.map((exam) => (
-          <div
-            key={exam.id}
-            className="bg-card rounded-xl border border-border shadow-card p-6"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <FileQuestion className="h-6 w-6 text-emerald-600" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-foreground">{exam.name}</h3>
-                    {getStatusBadge(exam.status)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {exam.subject} • {exam.grade}
-                  </p>
-                  <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <FileQuestion className="h-4 w-4" />
-                      {exam.questions} preguntas
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {exam.duration} min
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {exam.submitted}/{exam.total} respondieron
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {exam.avgScore !== null && (
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-foreground">{exam.avgScore}</p>
-                    <p className="text-xs text-muted-foreground">Promedio</p>
-                  </div>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver Preguntas
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <BarChart className="h-4 w-4 mr-2" />
-                      Ver Resultados
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+        {/* Filter */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-foreground">Filtrar por:</span>
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+              <SelectTrigger className="w-72">
+                <SelectValue placeholder="Seleccionar asignatura" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las asignaturas</SelectItem>
+                {subjects?.map((subject) => (
+                  <SelectItem key={subject.id} value={String(subject.id)}>
+                    {subject.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ))}
+        </div>
+
+        {/* Module Selection for New Exam */}
+        {isExamDialogOpen && !selectedExam && !selectedModuleId && (
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h3 className="font-semibold text-foreground mb-4">Selecciona un módulo para el examen</h3>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {allModules.map((module) => {
+                const hasExam = exams?.some((e) => e.moduleId === module.id);
+                return (
+                  <button
+                    key={module.id}
+                    onClick={() => {
+                      if (!hasExam) {
+                        setSelectedModuleId(module.id);
+                      }
+                    }}
+                    disabled={hasExam}
+                    className={`p-4 rounded-lg border text-left transition-colors ${
+                      hasExam
+                        ? "bg-muted/50 border-border cursor-not-allowed opacity-60"
+                        : "bg-card border-border hover:border-emerald-500 hover:bg-emerald-500/10"
+                    }`}
+                  >
+                    <p className="font-medium text-foreground">{module.nombre}</p>
+                    <p className="text-sm text-muted-foreground">{module.subjectName}</p>
+                    {hasExam && (
+                      <span className="text-xs text-amber-600 mt-1 block">
+                        Ya tiene examen
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {allModules.length === 0 && (
+              <p className="text-muted-foreground text-center py-8">
+                No hay módulos disponibles. Crea módulos en tus asignaturas primero.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Exams List */}
+        {filteredExams.length > 0 ? (
+          <div className="space-y-4">
+            {filteredExams.map((exam) => {
+              const moduleInfo = getModuleInfo(exam.moduleId);
+              return (
+                <div
+                  key={exam.id}
+                  className="bg-card rounded-xl border border-border shadow-card p-6"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <FileQuestion className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-semibold text-foreground">{exam.title}</h3>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Activo
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {moduleInfo?.subject} • {moduleInfo?.name}
+                        </p>
+                        <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <FileQuestion className="h-4 w-4" />
+                            {exam.questionsCount} preguntas
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditExam(exam)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Preguntas
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditExam(exam)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteExam(exam.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            title="No hay exámenes"
+            description="Crea tu primer examen para evaluar a tus alumnos"
+            icon={FileQuestion}
+            action={
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleCreateExam}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Examen
+              </Button>
+            }
+          />
+        )}
       </div>
-    </div>
+    </>
   );
 }

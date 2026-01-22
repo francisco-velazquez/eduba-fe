@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ExternalLink,
   Loader2,
+  FileQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -20,6 +21,9 @@ import { LoadingSpinner } from "@/components/common";
 import { useCourseDetails, useSubjectProgress, useCompleteChapter } from "@/hooks";
 import type { CourseChapter } from "@/hooks/useCourseDetails";
 import { VideoPlayer } from "@/components/video";
+import { ExamTakeDialog } from "@/components/dialogs/ExamTakeDialog";
+import { ModuleExamButton } from "@/components/course/ModuleExamButton";
+import { AppExam } from "@/services/api/exams.api";
 
 export default function StudentCourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +40,9 @@ export default function StudentCourseViewer() {
   
   const [expandedModules, setExpandedModules] = useState<number[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<number>(0);
+  const [selectedModuleForExam, setSelectedModuleForExam] = useState<number | null>(null);
+  const [isExamDialogOpen, setIsExamDialogOpen] = useState(false);
+  const [currentExam, setCurrentExam] = useState<AppExam | null>(null);
   
   // Get all chapters flattened
   const allChapters = useMemo(() => {
@@ -138,6 +145,12 @@ export default function StudentCourseViewer() {
     );
   }, []);
 
+  const handleOpenExam = useCallback((moduleId: number, exam: AppExam) => {
+    setSelectedModuleForExam(moduleId);
+    setCurrentExam(exam);
+    setIsExamDialogOpen(true);
+  }, []);
+
   // Loading state
   if (isLoading) {
     return (
@@ -236,6 +249,19 @@ export default function StudentCourseViewer() {
   };
 
   return (
+    <>
+      <ExamTakeDialog
+        open={isExamDialogOpen}
+        onOpenChange={(open) => {
+          setIsExamDialogOpen(open);
+          if (!open) {
+            setCurrentExam(null);
+            setSelectedModuleForExam(null);
+          }
+        }}
+        exam={currentExam}
+      />
+      
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card px-6 py-3">
@@ -303,50 +329,57 @@ export default function StudentCourseViewer() {
                             <p className="text-xs text-muted-foreground">Sin capítulos</p>
                           </div>
                         ) : (
-                          module.chapters.map((chapter) => (
-                            <button
-                              key={chapter.id}
-                              onClick={() => setSelectedChapter(chapter.id)}
-                              className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
-                                selectedChapter === chapter.id
-                                  ? "bg-violet-500/10 border-l-2 border-violet-500"
-                                  : "hover:bg-muted/30"
-                              }`}
-                            >
-                              {isChapterCompleted(chapter.id) ? (
-                                <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                              ) : selectedChapter === chapter.id ? (
-                                <Play className="h-4 w-4 text-violet-500 flex-shrink-0" />
-                              ) : (
-                                <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm truncate ${
-                                  selectedChapter === chapter.id ? "text-violet-600 font-medium" : "text-foreground"
-                                }`}>
-                                  {chapter.title}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  {chapter.type === "video" ? (
-                                    <>
-                                      <Video className="h-3 w-3" />
-                                      <span>Video</span>
-                                    </>
-                                  ) : chapter.type === "pdf" ? (
-                                    <>
-                                      <FileText className="h-3 w-3" />
-                                      <span>PDF</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FileText className="h-3 w-3" />
-                                      <span>Contenido</span>
-                                    </>
-                                  )}
+                          <>
+                            {module.chapters.map((chapter) => (
+                              <button
+                                key={chapter.id}
+                                onClick={() => setSelectedChapter(chapter.id)}
+                                className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
+                                  selectedChapter === chapter.id
+                                    ? "bg-violet-500/10 border-l-2 border-violet-500"
+                                    : "hover:bg-muted/30"
+                                }`}
+                              >
+                                {isChapterCompleted(chapter.id) ? (
+                                  <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                                ) : selectedChapter === chapter.id ? (
+                                  <Play className="h-4 w-4 text-violet-500 flex-shrink-0" />
+                                ) : (
+                                  <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm truncate ${
+                                    selectedChapter === chapter.id ? "text-violet-600 font-medium" : "text-foreground"
+                                  }`}>
+                                    {chapter.title}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {chapter.type === "video" ? (
+                                      <>
+                                        <Video className="h-3 w-3" />
+                                        <span>Video</span>
+                                      </>
+                                    ) : chapter.type === "pdf" ? (
+                                      <>
+                                        <FileText className="h-3 w-3" />
+                                        <span>PDF</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FileText className="h-3 w-3" />
+                                        <span>Contenido</span>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            </button>
-                          ))
+                              </button>
+                            ))}
+                            {/* Module Exam Button */}
+                            <ModuleExamButton
+                              moduleId={module.id}
+                              onTakeExam={(exam) => handleOpenExam(module.id, exam)}
+                            />
+                          </>
                         )}
                       </div>
                     )}
@@ -416,5 +449,6 @@ export default function StudentCourseViewer() {
         </main>
       </div>
     </div>
+    </>
   );
 }

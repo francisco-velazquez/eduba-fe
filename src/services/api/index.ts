@@ -42,3 +42,21 @@ export type {
 
 export { progressApi } from "./progress.api";
 export type { ApiSubjectProgress, SubjectProgress } from "./progress.api";
+
+export { examsApi, mapApiExam, mapApiExamQuestion, mapApiExamOption } from "./exams.api";
+export type {
+  ApiExam,
+  ApiExamQuestion,
+  ApiExamOption,
+  AppExam,
+  AppExamQuestion,
+  AppExamOption,
+  CreateExamDto,
+  CreateExamQuestionDto,
+  CreateExamOptionDto,
+  UpdateExamDto,
+  SubmitExamDto,
+  ExamAnswerDto,
+  ExamResultResponse,
+  StudentExamResult,
+} from "./exams.api";

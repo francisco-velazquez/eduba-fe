@@ -22,6 +22,23 @@ export function useSubjects() {
   });
 }
 
+/**
+ * Get subjects for current teacher (same as useSubjects for now)
+ * Teachers see all subjects they have access to
+ */
+export function useTeacherSubjects() {
+  return useQuery({
+    queryKey: [...SUBJECTS_KEY, "teacher"],
+    queryFn: async () => {
+      const response = await subjectsApi.getAll();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data ?? [];
+    },
+  });
+}
+
 export function useSubject(id: string, enabled: boolean = true) {
   return useQuery({
     queryKey: [...SUBJECTS_KEY, id],

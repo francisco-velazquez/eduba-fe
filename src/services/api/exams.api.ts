@@ -164,7 +164,7 @@ export const examsApi = {
    * Get exam by module ID
    */
   async getByModuleId(moduleId: number) {
-    const response = await httpClient.get<ApiExam>(`/exams/module/${moduleId}`);
+    const response = await httpClient.get<ApiExam>(`/exams/by-module/${moduleId}`);
     return {
       ...response,
       data: response.data ? mapApiExam(response.data) : null,

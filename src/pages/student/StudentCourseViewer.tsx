@@ -22,7 +22,6 @@ import { useCourseDetails, useSubjectProgress, useCompleteChapter } from "@/hook
 import type { CourseChapter } from "@/hooks/useCourseDetails";
 import { VideoPlayer } from "@/components/video";
 import { ExamTakeDialog } from "@/components/dialogs/ExamTakeDialog";
-import { ModuleExamButton } from "@/components/course/ModuleExamButton";
 import { AppExam } from "@/services/api/exams.api";
 
 export default function StudentCourseViewer() {
@@ -87,7 +86,7 @@ export default function StudentCourseViewer() {
     if (initialChapterId && selectedChapter === 0) {
       setSelectedChapter(initialChapterId);
     }
-  }, [course, expandedModules.length, initialChapterId, selectedChapter, chapterIdParam, allChapters]);
+  }, [course, selectedChapter, chapterIdParam, expandedModules, initialChapterId, allChapters]);
 
   // Current chapter
   const currentChapter: CourseChapter | undefined = useMemo(() => {
@@ -234,6 +233,20 @@ export default function StudentCourseViewer() {
       );
     }
 
+    // Exam content
+    if (currentChapter.type === "exam" && currentChapter.examData) {
+      return (
+        <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl flex flex-col items-center justify-center mb-6 border border-border">
+          <FileQuestion className="h-16 w-16 text-muted-foreground mb-4" />
+          <p className="text-foreground text-lg font-medium mb-2">{currentChapter.title}</p>
+          <p className="text-muted-foreground text-sm mb-4">Evaluación del módulo</p>
+          <Button onClick={() => currentChapter.examData && handleOpenExam(currentChapter.examData.moduleId, currentChapter.examData)}>
+            Comenzar Examen
+          </Button>
+        </div>
+      );
+    }
+
     // No content available
     return (
       <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center mb-6">
@@ -364,6 +377,11 @@ export default function StudentCourseViewer() {
                                         <FileText className="h-3 w-3" />
                                         <span>PDF</span>
                                       </>
+                                    ) : chapter.type === "exam" ? (
+                                      <>
+                                        <FileQuestion className="h-3 w-3" />
+                                        <span>Examen</span>
+                                      </>
                                     ) : (
                                       <>
                                         <FileText className="h-3 w-3" />
@@ -374,11 +392,6 @@ export default function StudentCourseViewer() {
                                 </div>
                               </button>
                             ))}
-                            {/* Module Exam Button */}
-                            <ModuleExamButton
-                              moduleId={module.id}
-                              onTakeExam={(exam) => handleOpenExam(module.id, exam)}
-                            />
                           </>
                         )}
                       </div>

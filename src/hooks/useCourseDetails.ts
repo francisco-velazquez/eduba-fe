@@ -6,18 +6,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { useStudentCourses } from "./useStudentCourses";
 import { chaptersApi, AppChapter } from "@/services/api/chapters.api";
+import { examsApi, AppExam } from "@/services/api/exams.api";
 
 export interface CourseChapter {
   id: number;
   title: string;
   description: string;
   orderIndex: number;
-  type: "video" | "pdf" | "content";
+  type: "video" | "pdf" | "content" | "exam";
   videoUrl: string | null;
   contentUrl: string | null;
   duration?: string;
   completed: boolean;
   current: boolean;
+  examData?: AppExam;
 }
 
 export interface CourseModule {
@@ -63,34 +65,40 @@ export function useCourseDetails(courseId: number) {
 
   // Fetch chapters for all modules
   const {
-    data: chaptersData,
-    isLoading: isLoadingChapters,
-    isError: chaptersError,
+    data: modulesContent,
+    isLoading: isLoadingContent,
+    isError: contentError,
   } = useQuery({
-    queryKey: ["course-chapters", courseId, course?.modules.map((m) => m.id)],
+    queryKey: ["course-content", courseId, course?.modules.map((m) => m.id)],
     queryFn: async () => {
       if (!course) return {};
       
-      // Fetch chapters for all modules in parallel
+      // Fetch chapters and exams for all modules in parallel
       const results = await Promise.all(
         course.modules.map(async (module) => {
-          const response = await chaptersApi.getByModule(module.id);
+          const [chaptersResponse, examResponse] = await Promise.all([
+            chaptersApi.getByModule(module.id),
+            examsApi.getByModuleId(module.id),
+          ]);
+
           return {
             moduleId: module.id,
-            chapters: response.data || [],
+            chapters: chaptersResponse.data || [],
+            exam: examResponse.error ? null : examResponse.data,
           };
         })
       );
 
-      // Create a map of moduleId -> chapters
-      const chaptersMap: Record<number, AppChapter[]> = {};
+      // Create a map of moduleId -> content
+      const contentMap: Record<number, { chapters: AppChapter[]; exam: AppExam | null }> = {};
       results.forEach((result) => {
-        chaptersMap[result.moduleId] = result.chapters.sort(
-          (a, b) => a.orderIndex - b.orderIndex
-        );
+        contentMap[result.moduleId] = {
+          chapters: result.chapters.sort((a, b) => a.orderIndex - b.orderIndex),
+          exam: result.exam,
+        };
       });
 
-      return chaptersMap;
+      return contentMap;
     },
     enabled: !!course && course.modules.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -105,16 +113,12 @@ export function useCourseDetails(courseId: number) {
         code: course.code,
         grade: course.grade,
         modules: course.modules.map((module) => {
-          const moduleChapters = chaptersData?.[module.id] || [];
+          const content = modulesContent?.[module.id] || { chapters: [], exam: null };
+          const moduleChapters = content.chapters;
+          const moduleExam = content.exam;
           const publishedChapters = moduleChapters.filter((c) => c.isPublished);
 
-          return {
-            id: module.id,
-            title: module.title,
-            orderIndex: module.orderIndex,
-            isPublished: module.isPublished,
-            completed: false, // Placeholder until progress tracking
-            chapters: publishedChapters.map((chapter, index) => ({
+          const mappedChapters: CourseChapter[] = publishedChapters.map((chapter, index) => ({
               id: chapter.id,
               title: chapter.nombre,
               description: chapter.descripcion,
@@ -124,19 +128,45 @@ export function useCourseDetails(courseId: number) {
               contentUrl: chapter.contentUrl,
               completed: false, // Placeholder until progress tracking
               current: index === 0 && module.orderIndex === 1, // First chapter of first module
-            })),
+            }));
+
+          if (moduleExam) {
+            mappedChapters.push({
+              id: moduleExam.id,
+              title: moduleExam.title,
+              description: "Evaluación del módulo",
+              orderIndex: 9999,
+              type: "exam",
+              videoUrl: null,
+              contentUrl: null,
+              completed: false,
+              current: mappedChapters.length === 0 && module.orderIndex === 1,
+              examData: moduleExam,
+            });
+          }
+
+          return {
+            id: module.id,
+            title: module.title,
+            orderIndex: module.orderIndex,
+            isPublished: module.isPublished,
+            completed: false, // Placeholder until progress tracking
+            chapters: mappedChapters,
           };
         }),
         progress: course.progress,
-        totalChapters: Object.values(chaptersData || {}).flat().filter((c) => c.isPublished).length,
+        totalChapters: Object.values(modulesContent || {}).reduce(
+          (acc, curr) => acc + curr.chapters.filter((c) => c.isPublished).length + (curr.exam ? 1 : 0),
+          0
+        ),
         completedChapters: 0,
       }
     : null;
 
   return {
     course: courseDetails,
-    isLoading: isLoadingCourses || isLoadingChapters,
-    isError: coursesError || chaptersError,
+    isLoading: isLoadingCourses || isLoadingContent,
+    isError: coursesError || contentError,
     notFound: !isLoadingCourses && !course,
   };
 }

@@ -46,6 +46,9 @@ export default function TeacherExams() {
   const [selectedExam, setSelectedExam] = useState<AppExam | null>(null);
   const [examToDelete, setExamToDelete] = useState<number | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [newExam, setNewExam] = useState(false);
+
+
 
   // Get all modules from all subjects for filtering
   const allModules = subjects?.flatMap((s) => 
@@ -67,7 +70,8 @@ export default function TeacherExams() {
   const handleCreateExam = () => {
     setSelectedExam(null);
     setSelectedModuleId(null);
-    setIsExamDialogOpen(true);
+    setIsExamDialogOpen(false);
+    setNewExam(true)
   };
 
   const handleEditExam = (exam: AppExam) => {
@@ -110,6 +114,7 @@ export default function TeacherExams() {
     setIsExamDialogOpen(false);
     setSelectedExam(null);
     setSelectedModuleId(null);
+    setNewExam(false);
   };
 
   if (isLoading) {
@@ -185,7 +190,7 @@ export default function TeacherExams() {
         </div>
 
         {/* Module Selection for New Exam */}
-        {isExamDialogOpen && !selectedExam && !selectedModuleId && (
+        {newExam && !isExamDialogOpen && !selectedExam && !selectedModuleId && (
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Selecciona un módulo para el examen</h3>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -197,6 +202,8 @@ export default function TeacherExams() {
                     onClick={() => {
                       if (!hasExam) {
                         setSelectedModuleId(module.id);
+                        setIsExamDialogOpen(true);
+                        setNewExam(false);
                       }
                     }}
                     disabled={hasExam}

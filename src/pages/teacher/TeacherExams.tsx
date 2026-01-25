@@ -29,12 +29,11 @@ import {
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { ExamDialog, ExamFormValues } from "@/components/dialogs/ExamDialog";
-import { useExams, useCreateExam, useUpdateExam, useDeleteExam } from "@/hooks/useExams";
+import { useCreateExam, useUpdateExam, useDeleteExam, useExamBySubject } from "@/hooks/useExams";
 import { useTeacherSubjects } from "@/hooks/useSubjects";
 import { AppExam, CreateExamDto } from "@/services/api/exams.api";
 
 export default function TeacherExams() {
-  const { data: exams, isLoading } = useExams();
   const { data: subjects } = useTeacherSubjects();
   const createExam = useCreateExam();
   const updateExam = useUpdateExam();
@@ -48,6 +47,8 @@ export default function TeacherExams() {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [newExam, setNewExam] = useState(false);
 
+  const subjectId = selectedSubject === "all" ? undefined : Number(selectedSubject);
+  const { data: exams, isLoading } = useExamBySubject(subjectId);
 
 
   // Get all modules from all subjects for filtering
@@ -56,11 +57,7 @@ export default function TeacherExams() {
   ) ?? [];
 
   // Filter exams by selected subject
-  const filteredExams = exams?.filter((exam) => {
-    if (selectedSubject === "all") return true;
-    const module = allModules.find((m) => m.id === exam.moduleId);
-    return module?.subjectId === selectedSubject;
-  }) ?? [];
+  const filteredExams = exams ?? [];
 
   const getModuleInfo = (moduleId: number) => {
     const module = allModules.find((m) => m.id === moduleId);

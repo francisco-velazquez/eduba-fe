@@ -73,6 +73,22 @@ export function useExamByModule(moduleId: number | undefined) {
 }
 
 /**
+ * Get exam by subject ID
+ */
+export function useExamBySubject(subjectId: number | undefined) {
+  return useQuery({
+    queryKey: [...EXAMS_KEY, subjectId],
+    queryFn: async () => {
+      const response = await examsApi.getBySubjectId(subjectId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data;
+    },
+  });
+}
+
+/**
  * Get available exams for student
  */
 export function useAvailableExams() {

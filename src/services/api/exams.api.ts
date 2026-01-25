@@ -172,6 +172,20 @@ export const examsApi = {
   },
 
   /**
+   * Get exam by module ID
+   */
+  async getBySubjectId(subjectId: number) {
+    const response = await httpClient.get<ApiExam[]>(`/exams/by-subject/${subjectId}`);
+
+    const mappedExams = response.data?.map(mapApiExam) ?? [];
+
+    return {
+      ...response,
+      data: response.data ? mappedExams : null,
+    };
+  },
+
+  /**
    * Create new exam (teacher only)
    */
   async create(data: CreateExamDto) {

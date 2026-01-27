@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -189,19 +190,22 @@ export function ExamDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>
+      <DialogContent className="w-[95vw] max-w-3xl h-[90vh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0 pb-2">
+          <DialogTitle className="text-base sm:text-lg">
             {mode === "create" ? "Crear Examen" : "Editar Examen"}
             {moduleName && (
-              <span className="text-sm font-normal text-muted-foreground ml-2">
-                - {moduleName}
+              <span className="text-muted-foreground font-normal text-xs sm:text-sm block sm:inline sm:ml-2 mt-1 sm:mt-0">
+                — {moduleName}
               </span>
             )}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulario para {mode === "create" ? "crear un nuevo" : "editar el"} examen
+          </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-4">
+        <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
           <div className="space-y-6 py-4">
             {/* Title */}
             <div className="space-y-2">
@@ -336,14 +340,14 @@ export function ExamDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="border-t pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="border-t pt-3 sm:pt-4 flex-shrink-0 gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!isValid() || isSubmitting}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 flex-1 sm:flex-none"
           >
             {isSubmitting
               ? "Guardando..."

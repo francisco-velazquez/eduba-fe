@@ -25,54 +25,52 @@ export function TeacherSidebar({ onNavigate }: TeacherSidebarProps) {
   };
 
   return (
-    <aside className="md:fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
-      <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border">
-          <img src={edubbaLogo} alt={APP_CONFIG.name} className="h-10 w-auto object-contain" />
-          <div>
-            <p className="text-xs text-sidebar-foreground/60">Panel {ROLE_LABELS.maestro}</p>
-          </div>
+    <aside className="md:fixed left-0 top-0 z-40 h-full md:h-screen w-64 bg-sidebar flex flex-col">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-6 py-4 md:py-6 border-b border-sidebar-border flex-shrink-0">
+        <img src={edubbaLogo} alt={APP_CONFIG.name} className="h-8 md:h-10 w-auto object-contain" />
+        <div>
+          <p className="text-xs text-sidebar-foreground/60">Panel {ROLE_LABELS.maestro}</p>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {TEACHER_NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/maestro"}
-              className="sidebar-link"
-              activeClassName="sidebar-link-active"
-              onClick={handleNavClick}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.title}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* User Info */}
-        <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3 mb-4 px-3">
-            <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center">
-              <span className="text-sm font-medium text-primary-foreground">{initials}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.email || "Maestro"}
-              </p>
-              <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS.maestro}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-4 md:py-6 space-y-1 overflow-y-auto min-h-0">
+        {TEACHER_NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.path === "/maestro"}
+            className="sidebar-link"
+            activeClassName="sidebar-link-active"
+            onClick={handleNavClick}
           >
-            <LogOut className="h-5 w-5" />
-            <span>Cerrar Sesión</span>
-          </button>
+            <item.icon className="h-5 w-5" />
+            <span>{item.title}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* User Info */}
+      <div className="border-t border-sidebar-border p-3 md:p-4 flex-shrink-0">
+        <div className="flex items-center gap-3 mb-3 md:mb-4 px-2 md:px-3">
+          <div className="h-8 md:h-9 w-8 md:w-9 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-xs md:text-sm font-medium text-primary-foreground">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs md:text-sm font-medium text-sidebar-foreground truncate">
+              {user?.email || "Maestro"}
+            </p>
+            <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS.maestro}</p>
+          </div>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="sidebar-link w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Cerrar Sesión</span>
+        </button>
       </div>
     </aside>
   );

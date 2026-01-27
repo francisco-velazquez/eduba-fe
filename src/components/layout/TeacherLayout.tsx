@@ -35,8 +35,10 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
-                <TeacherSidebar onNavigate={() => setSidebarOpen(false)} />
+              <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border h-full flex flex-col" aria-describedby={undefined}>
+                <div className="flex-1 overflow-hidden">
+                  <TeacherSidebar onNavigate={() => setSidebarOpen(false)} />
+                </div>
               </SheetContent>
             </Sheet>
           </div>

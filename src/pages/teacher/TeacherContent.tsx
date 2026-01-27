@@ -29,12 +29,17 @@ import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { useSubject } from "@/hooks/useSubjects";
 import { useCreateModule, useUpdateModule } from "@/hooks/useModules";
 import { useCreateChapter, useReorderChapters, useUpdateChapter } from "@/hooks/useChapters";
+import { useCreateExam, useUpdateExam, useDeleteExam } from "@/hooks/useExams";
 import { ModuleDialog, ModuleFormValues } from "@/components/dialogs/ModuleDialog";
 import { uploadChapterFile, chaptersApi } from "@/services/api/chapters.api";
 import { ChapterDialog, ChapterFormValues } from "@/components/dialogs/ChapterDialog";
+import { ExamDialog, ExamFormValues } from "@/components/dialogs/ExamDialog";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
+import { ModuleExamMenu } from "@/components/teacher/ModuleExamMenu";
 import { AppChapter, AppModule, modulesApi } from "@/services/api/modules.api";
+import { AppExam, CreateExamDto } from "@/services/api/exams.api";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { toast } from "sonner";
 
 export default function TeacherContent() {
   const { id_asignatura } = useParams<{ id_asignatura: string }>();
@@ -44,22 +49,31 @@ export default function TeacherContent() {
   const createChapter = useCreateChapter();
   const updateChapter = useUpdateChapter();
   const reorderChapters = useReorderChapters();
+  const createExam = useCreateExam();
+  const updateExam = useUpdateExam();
+  const deleteExam = useDeleteExam();
 
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false);
+  const [isExamDialogOpen, setIsExamDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteModuleDialogOpen, setIsDeleteModuleDialogOpen] = useState(false);
+  const [isDeleteExamDialogOpen, setIsDeleteExamDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [chapterToDelete, setChapterToDelete] = useState<number | null>(null);
   const [moduleToDelete, setModuleToDelete] = useState<number | null>(null);
   const [moduleToEdit, setModuleToEdit] = useState<AppModule | null>(null);
   const [chapterToEdit, setChapterToEdit] = useState<AppChapter | null>(null);
+  const [examToEdit, setExamToEdit] = useState<AppExam | null>(null);
+  const [examToDelete, setExamToDelete] = useState<number | null>(null);
+  const [selectedModuleForExam, setSelectedModuleForExam] = useState<AppModule | null>(null);
   const [expandedModules, setExpandedModules] = useState<number[]>([]);
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeletingModule, setIsDeletingModule] = useState(false);
+  const [isDeletingExam, setIsDeletingExam] = useState(false);
 
   const filteredModules = subject?.modules?.filter((module) => {
     if (!searchQuery) return true;
@@ -242,6 +256,71 @@ export default function TeacherContent() {
     setIsChapterDialogOpen(true);
   };
 
+  const handleOpenExamDialog = async (module: AppModule, existingExam?: AppExam | null) => {
+    setSelectedModuleForExam(module);
+    if (existingExam) {
+      setExamToEdit(existingExam);
+    } else {
+      setExamToEdit(null);
+    }
+    setIsExamDialogOpen(true);
+  };
+
+  const handleSaveExam = async (values: ExamFormValues) => {
+    if (!selectedModuleForExam) return;
+
+    try {
+      if (examToEdit) {
+        await updateExam.mutateAsync({
+          id: examToEdit.id,
+          data: {
+            title: values.title,
+            questions: values.questions,
+          },
+        });
+        toast.success("Examen actualizado correctamente");
+      } else {
+        const examData: CreateExamDto = {
+          title: values.title,
+          moduleId: selectedModuleForExam.id,
+          questions: values.questions,
+        };
+        await createExam.mutateAsync(examData);
+        toast.success("Examen creado correctamente");
+      }
+      setIsExamDialogOpen(false);
+      setExamToEdit(null);
+      setSelectedModuleForExam(null);
+    } catch (error: any) {
+      if (error?.message?.includes("ya tiene un examen")) {
+        toast.error("Este módulo ya tiene un examen asignado");
+      } else {
+        toast.error("Error al guardar el examen");
+      }
+    }
+  };
+
+  const handleDeleteExam = (examId: number) => {
+    setExamToDelete(examId);
+    setIsDeleteExamDialogOpen(true);
+  };
+
+  const confirmDeleteExam = async () => {
+    if (!examToDelete) return;
+
+    setIsDeletingExam(true);
+    try {
+      await deleteExam.mutateAsync(examToDelete);
+      toast.success("Examen eliminado correctamente");
+      setIsDeleteExamDialogOpen(false);
+      setExamToDelete(null);
+    } catch (error) {
+      toast.error("Error al eliminar el examen");
+    } finally {
+      setIsDeletingExam(false);
+    }
+  };
+
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
@@ -322,6 +401,21 @@ export default function TeacherContent() {
           contentUrl: chapterToEdit.contentUrl
         } : null}
       />
+      <ExamDialog
+        open={isExamDialogOpen}
+        onOpenChange={(open) => {
+          setIsExamDialogOpen(open);
+          if (!open) {
+            setExamToEdit(null);
+            setSelectedModuleForExam(null);
+          }
+        }}
+        onSubmit={handleSaveExam}
+        isSubmitting={createExam.isPending || updateExam.isPending}
+        mode={examToEdit ? "edit" : "create"}
+        initialData={examToEdit}
+        moduleName={selectedModuleForExam?.nombre}
+      />
       <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -339,6 +433,16 @@ export default function TeacherContent() {
         description="¿Estás seguro de que deseas eliminar este módulo? Se eliminarán todos los capítulos y recursos asociados. Esta acción no se puede deshacer."
         onConfirm={confirmDeleteModule}
         isLoading={isDeletingModule}
+        variant="destructive"
+        confirmText="Eliminar"
+      />
+      <ConfirmDialog
+        open={isDeleteExamDialogOpen}
+        onOpenChange={setIsDeleteExamDialogOpen}
+        title="Eliminar Examen"
+        description="¿Estás seguro de que deseas eliminar este examen? Los resultados de los alumnos también se eliminarán. Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteExam}
+        isLoading={isDeletingExam}
         variant="destructive"
         confirmText="Eliminar"
       />
@@ -439,6 +543,12 @@ export default function TeacherContent() {
                           <Edit className="h-4 w-4 mr-2" />
                           Editar Módulo
                         </DropdownMenuItem>
+                        <ModuleExamMenu
+                          module={module}
+                          onCreateExam={(mod) => handleOpenExamDialog(mod, null)}
+                          onEditExam={(mod, exam) => handleOpenExamDialog(mod, exam)}
+                          onDeleteExam={handleDeleteExam}
+                        />
                         <DropdownMenuItem 
                           className="text-destructive"
                           onClick={() => handleDeleteModule(module.id)}

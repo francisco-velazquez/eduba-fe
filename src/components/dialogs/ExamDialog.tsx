@@ -39,7 +39,7 @@ interface ExamDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: ExamFormValues) => void;
   isSubmitting?: boolean;
-  mode?: "create" | "edit";
+  mode?: "create" | "edit" | "readonly";
   initialData?: AppExam | null;
   moduleName?: string;
 }
@@ -76,7 +76,7 @@ export function ExamDialog({
 
   useEffect(() => {
     if (open) {
-      if (mode === "edit" && initialData) {
+      if ((mode === "edit" || mode === "readonly")  && initialData) {
         setTitle(initialData.title);
         setQuestions(
           initialData.questions.map((q) => ({
@@ -163,6 +163,7 @@ export function ExamDialog({
   };
 
   const handleSubmit = () => {
+    if (mode === "readonly") return;
     // Validate
     if (!title.trim()) return;
     if (questions.some((q) => !q.questionText.trim())) return;
@@ -190,7 +191,7 @@ export function ExamDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-3xl h-[90vh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-3xl h-[90vh] sm:h-[85vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0 pb-2">
           <DialogTitle className="text-base sm:text-lg">
             {mode === "create" ? "Crear Examen" : "Editar Examen"}
@@ -213,7 +214,8 @@ export function ExamDialog({
               <Input
                 id="exam-title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={mode === "readonly"}
                 placeholder="Ej: Examen Final - Módulo 1"
               />
             </div>
@@ -227,6 +229,7 @@ export function ExamDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleAddQuestion}
+                  disabled={mode === "readonly"}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Agregar Pregunta
@@ -248,10 +251,10 @@ export function ExamDialog({
                         <Select
                           value={question.questionType}
                           onValueChange={(value) =>
-                            handleQuestionChange(qIndex, "questionType", value)
+                            mode === "readonly" ? undefined : handleQuestionChange(qIndex, "questionType", value)
                           }
                         >
-                          <SelectTrigger className="w-44 h-8">
+                          <SelectTrigger className="w-44 h-8" disabled={mode === "readonly"}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -267,8 +270,9 @@ export function ExamDialog({
                       <Textarea
                         value={question.questionText}
                         onChange={(e) =>
-                          handleQuestionChange(qIndex, "questionText", e.target.value)
+                          mode === "readonly" ? undefined : handleQuestionChange(qIndex, "questionText", e.target.value)
                         }
+                        disabled={mode === "readonly"}
                         placeholder="Escribe la pregunta aquí..."
                         className="min-h-[60px]"
                       />
@@ -279,7 +283,7 @@ export function ExamDialog({
                       size="icon"
                       className="text-destructive hover:text-destructive"
                       onClick={() => handleRemoveQuestion(qIndex)}
-                      disabled={questions.length === 1}
+                      disabled={questions.length === 1 || mode === "readonly"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -294,17 +298,20 @@ export function ExamDialog({
                       <div key={oIndex} className="flex items-center gap-2">
                         <Switch
                           checked={option.isCorrect}
-                          onCheckedChange={() => handleCorrectChange(qIndex, oIndex)}
+                          onCheckedChange={
+                            mode === "readonly" ? undefined : () => handleCorrectChange(qIndex, oIndex)
+                          }
                           className="data-[state=checked]:bg-emerald-600"
+                          disabled={mode === "readonly"}
                         />
                         <Input
                           value={option.optionText}
                           onChange={(e) =>
-                            handleOptionChange(qIndex, oIndex, e.target.value)
+                            mode === "readonly" ? undefined : handleOptionChange(qIndex, oIndex, e.target.value)
                           }
                           placeholder={`Opción ${oIndex + 1}`}
                           className="flex-1"
-                          disabled={question.questionType === "true_false"}
+                          disabled={question.questionType === "true_false" || mode === "readonly"}
                         />
                         {question.questionType === "multiple_choice" && (
                           <Button
@@ -313,7 +320,7 @@ export function ExamDialog({
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleRemoveOption(qIndex, oIndex)}
-                            disabled={question.options.length <= 2}
+                            disabled={question.options.length <= 2 || mode === "readonly"}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -328,6 +335,7 @@ export function ExamDialog({
                           size="sm"
                           onClick={() => handleAddOption(qIndex)}
                           className="text-muted-foreground"
+                          disabled={mode === "readonly"}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           Agregar opción
@@ -340,13 +348,13 @@ export function ExamDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="border-t pt-3 sm:pt-4 flex-shrink-0 gap-2 sm:gap-0">
+        <DialogFooter className={`border-t pt-3 sm:pt-4 flex-shrink-0 gap-2 sm:gap-0 ${mode === "readonly" ? "" : "justify-between"}`}>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValid() || isSubmitting}
+            disabled={mode === "readonly" || !isValid() || isSubmitting}
             className="bg-emerald-600 hover:bg-emerald-700 flex-1 sm:flex-none"
           >
             {isSubmitting

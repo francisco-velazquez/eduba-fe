@@ -141,8 +141,8 @@ export const examsApi = {
   /**
    * Get all exams (for teachers)
    */
-  async getAll() {
-    const response = await httpClient.get<ApiExam[]>("/exams");
+  async getAllByTeacher() {
+    const response = await httpClient.get<ApiExam[]>("/exams/by-teacher");
     return {
       ...response,
       data: response.data?.map(mapApiExam) ?? [],

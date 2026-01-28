@@ -29,7 +29,7 @@ import {
 import { PageHeader, LoadingSpinner, EmptyState } from "@/components/common";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { ExamDialog, ExamFormValues } from "@/components/dialogs/ExamDialog";
-import { useCreateExam, useUpdateExam, useDeleteExam, useExamBySubject } from "@/hooks/useExams";
+import { useCreateExam, useUpdateExam, useDeleteExam, useExamsForTeachers } from "@/hooks/useExams";
 import { useTeacherSubjects } from "@/hooks/useSubjects";
 import { AppExam, CreateExamDto } from "@/services/api/exams.api";
 
@@ -46,9 +46,10 @@ export default function TeacherExams() {
   const [examToDelete, setExamToDelete] = useState<number | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [newExam, setNewExam] = useState(false);
+  const [readonlyExam, setReadonlyExam] = useState(false);
 
   const subjectId = selectedSubject === "all" ? undefined : Number(selectedSubject);
-  const { data: exams, isLoading } = useExamBySubject(subjectId);
+  const { data: exams, isLoading } = useExamsForTeachers(subjectId);
 
 
   // Get all modules from all subjects for filtering
@@ -75,7 +76,14 @@ export default function TeacherExams() {
     setSelectedExam(exam);
     setSelectedModuleId(exam.moduleId);
     setIsExamDialogOpen(true);
+    setReadonlyExam(false);
   };
+
+  const handleViewQuestions = (exam: AppExam) => {
+    setSelectedExam(exam);
+    setIsExamDialogOpen(true);
+    setReadonlyExam(true);
+  }
 
   const handleDeleteExam = (examId: number) => {
     setExamToDelete(examId);
@@ -131,7 +139,7 @@ export default function TeacherExams() {
         }}
         onSubmit={handleSaveExam}
         isSubmitting={createExam.isPending || updateExam.isPending}
-        mode={selectedExam ? "edit" : "create"}
+        mode={readonlyExam ? 'readonly' : (selectedExam ? "edit" : "create")}
         initialData={selectedExam}
         moduleName={
           selectedModuleId
@@ -272,7 +280,7 @@ export default function TeacherExams() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditExam(exam)}>
+                          <DropdownMenuItem onClick={() => handleViewQuestions(exam)}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver Preguntas
                           </DropdownMenuItem>

@@ -30,7 +30,7 @@ export function useTeacherSubjects() {
   return useQuery({
     queryKey: [...SUBJECTS_KEY, "teacher"],
     queryFn: async () => {
-      const response = await subjectsApi.getAll();
+      const response = await subjectsApi.getByTeacher();
       if (response.error) {
         throw new Error(response.error);
       }

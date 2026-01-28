@@ -133,6 +133,17 @@ export const subjectsApi = {
   },
 
   /**
+   * Get subjects for current teacher
+   */
+  async getByTeacher() {
+    const response = await httpClient.get<ApiSubject[]>("/subjects/by-teacher");
+    return {
+      ...response,
+      data: response.data?.map((s, i) => mapApiSubject(s, i)) ?? null,
+    };
+  },
+
+  /**
    * Create new subject
    */
   async create(data: CreateSubjectDto) {

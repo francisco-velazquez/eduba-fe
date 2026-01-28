@@ -18,15 +18,14 @@ const EXAMS_KEY = ["exams"];
 const EXAM_RESULTS_KEY = ["exam-results"];
 
 // ==================== Query Hooks ====================
-
 /**
  * Get all exams (for teachers)
  */
-export function useExams() {
+export function useExamsByTeacher() {
   return useQuery({
     queryKey: EXAMS_KEY,
     queryFn: async () => {
-      const response = await examsApi.getAll();
+      const response = await examsApi.getAllByTeacher();
       if (response.error) {
         throw new Error(response.error);
       }
@@ -85,6 +84,33 @@ export function useExamBySubject(subjectId: number | undefined) {
       }
       return response.data;
     },
+  });
+}
+
+/**
+ * Get exmas for teachers, optionally filtered by subject ID
+ */
+export function useExamsForTeachers(subjectId?: number) {
+  return useQuery({
+    // 1. Estructura la key de forma jerárquica
+    queryKey: subjectId ? [...EXAMS_KEY, 'subject', subjectId] : [...EXAMS_KEY, 'all'],
+    
+    // 2. Separa la lógica de obtención de datos
+    queryFn: async () => {
+      const response = subjectId !== undefined 
+        ? await examsApi.getBySubjectId(subjectId)
+        : await examsApi.getAllByTeacher();
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      // Aseguramos que devolvemos un array vacío en caso de null/undefined si la API es inconsistente
+      return response.data ?? [];
+    },
+    
+    // 3. Opcional: Evita que la query se ejecute si necesitas lógica condicional externa
+    enabled: Boolean(subjectId) || subjectId === undefined, 
   });
 }
 

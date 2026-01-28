@@ -11,8 +11,7 @@ export { useGradeSubjects, useAssignSubjectsToTeacher, useUpdateStudentGrade } f
 export { useStudentCourses } from "./useStudentCourses";
 export { useCourseDetails } from "./useCourseDetails";
 export { useSubjectProgress, useCoursesProgress, useCompleteChapter } from "./useProgress";
-export { 
-  useExams, 
+export {
   useExam, 
   useExamByModule, 
   useAvailableExams, 
@@ -20,5 +19,6 @@ export {
   useCreateExam, 
   useUpdateExam, 
   useDeleteExam, 
-  useSubmitExam 
+  useSubmitExam,
+  useExamsForTeachers,
 } from "./useExams";

@@ -452,10 +452,6 @@ export default function TeacherContent() {
           description="Organiza módulos, capítulos y recursos de tus asignaturas"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Subir Recurso
-              </Button>
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700"
                 onClick={() => {

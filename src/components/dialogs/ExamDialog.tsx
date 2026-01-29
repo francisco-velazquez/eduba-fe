@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CreateExamQuestionDto, CreateExamOptionDto, AppExam } from "@/services/api/exams.api";
+import { AppSubject } from "@/services/api/subjects.api";
+import { AppModule } from "@/services/api/modules.api";
 
 interface QuestionFormData {
   questionText: string;
@@ -31,6 +33,7 @@ interface QuestionFormData {
 
 export interface ExamFormValues {
   title: string;
+  moduleId: number;
   questions: CreateExamQuestionDto[];
 }
 
@@ -41,6 +44,10 @@ interface ExamDialogProps {
   isSubmitting?: boolean;
   mode?: "create" | "edit" | "readonly";
   initialData?: AppExam | null;
+  // Context props for pre-selection
+  subjects?: AppSubject[];
+  preSelectedSubjectId?: string | null;
+  preSelectedModuleId?: number | null;
   moduleName?: string;
 }
 
@@ -69,14 +76,23 @@ export function ExamDialog({
   isSubmitting = false,
   mode = "create",
   initialData,
+  subjects = [],
+  preSelectedSubjectId,
+  preSelectedModuleId,
   moduleName,
 }: ExamDialogProps) {
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionFormData[]>([{ ...defaultQuestion }]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+
+  // Get modules for selected subject
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
+  const availableModules: AppModule[] = selectedSubject?.modules ?? [];
 
   useEffect(() => {
     if (open) {
-      if ((mode === "edit" || mode === "readonly")  && initialData) {
+      if ((mode === "edit" || mode === "readonly") && initialData) {
         setTitle(initialData.title);
         setQuestions(
           initialData.questions.map((q) => ({
@@ -88,12 +104,43 @@ export function ExamDialog({
             })),
           }))
         );
+        // For edit mode, find the subject that contains this module
+        const subjectWithModule = subjects.find((s) =>
+          s.modules?.some((m) => m.id === initialData.moduleId)
+        );
+        if (subjectWithModule) {
+          setSelectedSubjectId(subjectWithModule.id);
+        }
+        setSelectedModuleId(initialData.moduleId);
       } else {
+        // Create mode
         setTitle("");
         setQuestions([{ ...defaultQuestion }]);
+        
+        // Handle pre-selection
+        if (preSelectedSubjectId) {
+          setSelectedSubjectId(preSelectedSubjectId);
+        } else if (subjects.length === 1) {
+          setSelectedSubjectId(subjects[0].id);
+        } else {
+          setSelectedSubjectId("");
+        }
+        
+        if (preSelectedModuleId) {
+          setSelectedModuleId(preSelectedModuleId);
+        } else {
+          setSelectedModuleId(null);
+        }
       }
     }
-  }, [open, mode, initialData]);
+  }, [open, mode, initialData, preSelectedSubjectId, preSelectedModuleId, subjects]);
+
+  // When subject changes, reset module if not pre-selected
+  useEffect(() => {
+    if (!preSelectedModuleId && selectedSubjectId) {
+      setSelectedModuleId(null);
+    }
+  }, [selectedSubjectId, preSelectedModuleId]);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { ...defaultQuestion }]);
@@ -164,6 +211,7 @@ export function ExamDialog({
 
   const handleSubmit = () => {
     if (mode === "readonly") return;
+    if (!selectedModuleId) return;
     // Validate
     if (!title.trim()) return;
     if (questions.some((q) => !q.questionText.trim())) return;
@@ -172,6 +220,7 @@ export function ExamDialog({
 
     onSubmit({
       title: title.trim(),
+      moduleId: selectedModuleId,
       questions: questions.map((q) => ({
         questionText: q.questionText,
         questionType: q.questionType,
@@ -181,6 +230,7 @@ export function ExamDialog({
   };
 
   const isValid = () => {
+    if (!selectedModuleId) return false;
     if (!title.trim()) return false;
     if (questions.length === 0) return false;
     if (questions.some((q) => !q.questionText.trim())) return false;
@@ -189,15 +239,22 @@ export function ExamDialog({
     return true;
   };
 
+  // Check if subject/module selects should be disabled (when coming from course management)
+  const isSubjectLocked = !!preSelectedSubjectId && !!preSelectedModuleId;
+  const isModuleLocked = !!preSelectedModuleId;
+
+  // Get current module name for display
+  const currentModuleName = moduleName || availableModules.find((m) => m.id === selectedModuleId)?.nombre;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-3xl h-[90vh] sm:h-[85vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0 pb-2">
           <DialogTitle className="text-base sm:text-lg">
-            {mode === "create" ? "Crear Examen" : "Editar Examen"}
-            {moduleName && (
+            {mode === "create" ? "Crear Examen" : mode === "edit" ? "Editar Examen" : "Ver Examen"}
+            {currentModuleName && (
               <span className="text-muted-foreground font-normal text-xs sm:text-sm block sm:inline sm:ml-2 mt-1 sm:mt-0">
-                — {moduleName}
+                — {currentModuleName}
               </span>
             )}
           </DialogTitle>
@@ -208,14 +265,59 @@ export function ExamDialog({
 
         <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
           <div className="space-y-6 py-4">
+            {/* Subject and Module Selection - only show when subjects are provided */}
+            {subjects.length > 0 && mode !== "readonly" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="exam-subject">Asignatura</Label>
+                  <Select
+                    value={selectedSubjectId}
+                    onValueChange={setSelectedSubjectId}
+                    disabled={isSubjectLocked || mode === "edit"}
+                  >
+                    <SelectTrigger id="exam-subject">
+                      <SelectValue placeholder="Seleccionar asignatura" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="exam-module">Módulo</Label>
+                  <Select
+                    value={selectedModuleId ? String(selectedModuleId) : ""}
+                    onValueChange={(value) => setSelectedModuleId(Number(value))}
+                    disabled={isModuleLocked || !selectedSubjectId || mode === "edit"}
+                  >
+                    <SelectTrigger id="exam-module">
+                      <SelectValue placeholder={!selectedSubjectId ? "Selecciona primero una asignatura" : "Seleccionar módulo"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableModules.map((module) => (
+                        <SelectItem key={module.id} value={String(module.id)}>
+                          {module.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="exam-title">Título del Examen</Label>
               <Input
                 id="exam-title"
                 value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={mode === "readonly"}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={mode === "readonly"}
                 placeholder="Ej: Examen Final - Módulo 1"
               />
             </div>
@@ -350,19 +452,21 @@ export function ExamDialog({
 
         <DialogFooter className={`border-t pt-3 sm:pt-4 flex-shrink-0 gap-2 sm:gap-0 ${mode === "readonly" ? "" : "justify-between"}`}>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
-            Cancelar
+            {mode === "readonly" ? "Cerrar" : "Cancelar"}
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={mode === "readonly" || !isValid() || isSubmitting}
-            className="bg-emerald-600 hover:bg-emerald-700 flex-1 sm:flex-none"
-          >
-            {isSubmitting
-              ? "Guardando..."
-              : mode === "create"
-              ? "Crear Examen"
-              : "Guardar Cambios"}
-          </Button>
+          {mode !== "readonly" && (
+            <Button
+              onClick={handleSubmit}
+              disabled={!isValid() || isSubmitting}
+              className="bg-emerald-600 hover:bg-emerald-700 flex-1 sm:flex-none"
+            >
+              {isSubmitting
+                ? "Guardando..."
+                : mode === "create"
+                ? "Crear Examen"
+                : "Guardar Cambios"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -267,8 +267,6 @@ export default function TeacherContent() {
   };
 
   const handleSaveExam = async (values: ExamFormValues) => {
-    if (!selectedModuleForExam) return;
-
     try {
       if (examToEdit) {
         await updateExam.mutateAsync({
@@ -282,7 +280,7 @@ export default function TeacherContent() {
       } else {
         const examData: CreateExamDto = {
           title: values.title,
-          moduleId: selectedModuleForExam.id,
+          moduleId: values.moduleId,
           questions: values.questions,
         };
         await createExam.mutateAsync(examData);
@@ -291,6 +289,7 @@ export default function TeacherContent() {
       setIsExamDialogOpen(false);
       setExamToEdit(null);
       setSelectedModuleForExam(null);
+      refetch();
     } catch (error: any) {
       if (error?.message?.includes("ya tiene un examen")) {
         toast.error("Este módulo ya tiene un examen asignado");
@@ -414,6 +413,9 @@ export default function TeacherContent() {
         isSubmitting={createExam.isPending || updateExam.isPending}
         mode={examToEdit ? "edit" : "create"}
         initialData={examToEdit}
+        subjects={subject ? [subject] : []}
+        preSelectedSubjectId={id_asignatura ?? null}
+        preSelectedModuleId={selectedModuleForExam?.id ?? null}
         moduleName={selectedModuleForExam?.nombre}
       />
       <ConfirmDialog

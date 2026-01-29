@@ -59,11 +59,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
 
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-            </button>
-
             <div className="hidden md:flex items-center gap-3">
               <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center">
                 <span className="text-sm font-medium text-primary-foreground">{initials}</span>

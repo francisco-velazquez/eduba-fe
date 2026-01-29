@@ -58,7 +58,7 @@ export default function TeacherExams() {
   ) ?? [];
 
   // Filter exams by selected subject
-  const filteredExams = exams ?? [];
+  const filteredExams = exams.sort((a, b) => a.moduleId - b.moduleId) ?? [];
 
   const getModuleInfo = (moduleId: number) => {
     const module = allModules.find((m) => m.id === moduleId);

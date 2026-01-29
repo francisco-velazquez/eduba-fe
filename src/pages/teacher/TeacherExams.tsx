@@ -68,8 +68,9 @@ export default function TeacherExams() {
   const handleCreateExam = () => {
     setSelectedExam(null);
     setSelectedModuleId(null);
-    setIsExamDialogOpen(false);
-    setNewExam(true)
+    setIsExamDialogOpen(true);
+    setNewExam(false);
+    setReadonlyExam(false);
   };
 
   const handleEditExam = (exam: AppExam) => {
@@ -107,11 +108,11 @@ export default function TeacherExams() {
           questions: values.questions,
         },
       });
-    } else if (selectedModuleId) {
-      // Create new exam
+    } else {
+      // Create new exam - moduleId comes from the form values now
       const createData: CreateExamDto = {
         title: values.title,
-        moduleId: selectedModuleId,
+        moduleId: values.moduleId,
         questions: values.questions,
       };
       await createExam.mutateAsync(createData);
@@ -141,6 +142,9 @@ export default function TeacherExams() {
         isSubmitting={createExam.isPending || updateExam.isPending}
         mode={readonlyExam ? 'readonly' : (selectedExam ? "edit" : "create")}
         initialData={selectedExam}
+        subjects={subjects ?? []}
+        preSelectedSubjectId={selectedSubject !== "all" ? selectedSubject : null}
+        preSelectedModuleId={selectedModuleId}
         moduleName={
           selectedModuleId
             ? getModuleInfo(selectedModuleId)?.name
@@ -193,49 +197,6 @@ export default function TeacherExams() {
             </Select>
           </div>
         </div>
-
-        {/* Module Selection for New Exam */}
-        {newExam && !isExamDialogOpen && !selectedExam && !selectedModuleId && (
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Selecciona un módulo para el examen</h3>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {allModules.map((module) => {
-                const hasExam = exams?.some((e) => e.moduleId === module.id);
-                return (
-                  <button
-                    key={module.id}
-                    onClick={() => {
-                      if (!hasExam) {
-                        setSelectedModuleId(module.id);
-                        setIsExamDialogOpen(true);
-                        setNewExam(false);
-                      }
-                    }}
-                    disabled={hasExam}
-                    className={`p-4 rounded-lg border text-left transition-colors ${
-                      hasExam
-                        ? "bg-muted/50 border-border cursor-not-allowed opacity-60"
-                        : "bg-card border-border hover:border-emerald-500 hover:bg-emerald-500/10"
-                    }`}
-                  >
-                    <p className="font-medium text-foreground">{module.nombre}</p>
-                    <p className="text-sm text-muted-foreground">{module.subjectName}</p>
-                    {hasExam && (
-                      <span className="text-xs text-amber-600 mt-1 block">
-                        Ya tiene examen
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {allModules.length === 0 && (
-              <p className="text-muted-foreground text-center py-8">
-                No hay módulos disponibles. Crea módulos en tus asignaturas primero.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Exams List */}
         {filteredExams.length > 0 ? (
